@@ -165,3 +165,4 @@ notes.txt
 # databases
 *.sqlite3
 *.db
+dev.ipynb

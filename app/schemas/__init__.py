@@ -1,8 +1,9 @@
 
 # import all schemas
-from .schemas import CreateUserRequest, Token
+from .schemas import CreateUserRequestSchema, TokenSchema, CurrentUserSchema
 
 __all__ = [
-    "CreateUserRequest",
-    "Token",
+    "CreateUserRequestSchema",
+    "TokenSchema",
+    "CurrentUserSchema"
 ]
