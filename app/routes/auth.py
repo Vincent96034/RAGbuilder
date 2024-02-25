@@ -70,7 +70,7 @@ async def login_for_access_token(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.post("/delete_user", status_code=status.HTTP_200_OK)
+@router.delete("/delete_user", status_code=status.HTTP_200_OK)
 async def delete_user(
     user: Annotated[CurrentUserSchema, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],

@@ -1,14 +1,25 @@
+import pytest
+
 from app.ops.user_ops import create_and_commit_user, check_user_exists
+from app.db.models import UserModel
 
 
-def test_create_and_commit_user(mock_db_session):
-    result = create_and_commit_user("new@example.com", "password", mock_db_session)
-    assert mock_db_session.add.called
-    assert mock_db_session.commit.called
+def test_create_and_commit_user(db_dependency):
+    email = "new@example.com"
+    password = "password"
+    result = create_and_commit_user(email, password, db=db_dependency)
     assert result == {"message": "User created successfully"}
+    user = db_dependency.query(UserModel).filter(UserModel.email == email).first()
+    assert user.email == email
+    assert user.hashed_password != password # password should be hashed
 
 
-def test_check_user_exists(mock_db_session, mock_user):
-    mock_db_session.query.return_value.filter.return_value.first.return_value = mock_user
-    exists = check_user_exists("test@example.com", mock_db_session)
-    assert exists is True
+# pytes parametrize
+@pytest.mark.parametrize("email, expected", [
+    ("user1@example.com", True),
+    ("new@example.com", False)
+])
+def test_check_user_exists(db_dependency, email, expected):
+    result = check_user_exists(email, db=db_dependency)
+    assert result == expected
+
