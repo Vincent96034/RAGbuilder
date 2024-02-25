@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/")
 def home(request: Request):
-    return templates.TemplateResponse(name="home.html", context={"request": request})
+    return templates.TemplateResponse(name="hello.html", context={"request": request})
 
 
 @router.get("/user")
