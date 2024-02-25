@@ -4,15 +4,16 @@ from dotenv import load_dotenv
 from typing import Annotated
 from datetime import timedelta, datetime
 
-from fastapi import status, Depends
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from fastapi.exceptions import HTTPException
+from fastapi.requests import Request
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
 from app.db.models import UserModel
 from app.schemas import TokenSchema, CurrentUserSchema
+from app.ops.exceptions import raise_unauthorized_exception
 
 
 load_dotenv(".env")
@@ -65,17 +66,24 @@ def create_access_token(email: str, user_id: int, expires_delta: timedelta) -> T
         key=ENCRYPTION_SECRET_KEY,
         algorithm=ENCRYPTION_ALGORITHM)
 
-async def get_current_user(
-        token: Annotated[str, Depends(oauth2_bearer)]
-) -> CurrentUserSchema:
-    """Retrieves the current user based on the provided token.
 
-    Args:
-        token (str): The authentication token.
-
-    Returns:
-        dict: A dictionary containing the email and user ID of the current user.
+async def get_token_from_request(request: Request) -> str:
+    """Extracts the token from the request headers or cookies. This is used as to get the
+    token from the request object for web (cookie) based authentication.
     """
+    token = request.headers.get("Authorization")
+    if token is None:
+        token = request.cookies.get("access_token")
+    if token is None:
+        raise_unauthorized_exception("Not authenticated")
+    return token
+
+
+def decode_token(token: str) -> CurrentUserSchema:
+    """Decodes the authentication token."""
+    # Strip the "Bearer " prefix if present
+    if token.startswith("Bearer "):
+        token = token[7:]
     try:
         payload = jwt.decode(
             token=token,
@@ -84,16 +92,31 @@ async def get_current_user(
         email: str = payload.get("sub")
         user_id: int = payload.get("user_id")
         if email is None or user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"})
+            raise_unauthorized_exception()
         return CurrentUserSchema(email=email, user_id=user_id)
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"})
+    except JWTError as err:
+        logger.error(
+            "JWT Error when decoding token. Invalid authentication credentials. "
+            f"Error: {err}")
+        raise_unauthorized_exception()
+
+
+async def get_current_user(
+        request: Request,
+        token: Annotated[str, Depends(oauth2_bearer)] = None
+) -> CurrentUserSchema:
+    """Retrieves the current user based on the provided token. If the token is not
+    provided in the headers, it will attempt to retrieve it from the cookies.
+
+    Args:
+        request (Request): The request object.
+        token (str): The authentication token.
+
+    Returns:
+        CurrentUserSchema: The email and user ID of the current user.
+    """
+    token = await get_token_from_request(request) if token is None else token
+    return decode_token(token)
     
 
 def create_and_commit_user(email: str, password: str, db: Session) -> dict:
