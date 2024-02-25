@@ -6,11 +6,11 @@ from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker, Session
 from unittest.mock import MagicMock
 
+from app.ops.user_ops import get_current_user, bcrypt
+from app.schemas import CurrentUserSchema
 from app.main import app
 from app.db import Base, get_db
 from app.db.models import UserModel
-from app.ops.user_ops import get_current_user, bcrypt
-from app.schemas import CurrentUserSchema
 
 
 
@@ -45,11 +45,13 @@ def db_dependency(TestingSessionLocal, engine):
     test_users = [
         UserModel(email="user1@example.com", hashed_password=bcrypt.hash("password1")),
         UserModel(email="user2@example.com", hashed_password=bcrypt.hash("password2")),
-        UserModel(email="user_delete@example.com", hashed_password=bcrypt.hash("password_delete")),
+        UserModel(email="user_delete@example.com",
+                  hashed_password=bcrypt.hash("password_delete")),
     ]
     db.add_all(test_users)
     db.commit()
     # Override get_db dependency with this session
+
     def override_get_db():
         try:
             yield db
@@ -66,7 +68,7 @@ def db_dependency(TestingSessionLocal, engine):
 @pytest.fixture
 def current_user_dependency():
     """Override the get_current_user dependency to return a mock user.
-    
+
     Mock user: CurrentUserSchema(email='mock@example.com', user_id=1)
     """
     async def mock_get_current_user():
@@ -104,11 +106,9 @@ def mock_db_session():
     session = MagicMock(spec=Session)
     return session
 
+
 @pytest.fixture
 def mock_user():
     """Fixture to create a mock user."""
     user = UserModel(email="test@example.com", hashed_password="hashedpassword")
     return user
-
-
-

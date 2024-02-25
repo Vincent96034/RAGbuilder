@@ -10,7 +10,7 @@ logger = logging.getLogger('app')
 
 # Load the environment variables from the .env file
 load_dotenv(".env")
-SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL") or "sqlite:///:memory:" 
 logger.debug(f"SQLALCHEMY_DATABASE_URL: {SQLALCHEMY_DATABASE_URL}")
 
 engine = create_engine(
