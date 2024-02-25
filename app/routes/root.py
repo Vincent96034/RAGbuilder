@@ -18,8 +18,13 @@ router = APIRouter(
 templates = Jinja2Templates(directory="templates")
 
 @router.get("/")
-def home(request: Request):
+def home(request: Request, current_user: Annotated[CurrentUserSchema, Depends(get_current_user)]):
     return templates.TemplateResponse(name="hello.html", context={"request": request})
+
+
+@router.get("/login")
+def login(request: Request):
+    return templates.TemplateResponse(name="login.html", context={"request": request})
 
 
 @router.get("/user")

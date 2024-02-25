@@ -27,7 +27,8 @@ router = APIRouter(
     tags=["auth"],
     responses={404: {"description": "Not found"}})
 
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")) or 30
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES") or 30)
+
 
 
 @router.post("/create_user", status_code=status.HTTP_201_CREATED)
@@ -82,16 +83,18 @@ async def login_for_access_token(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.post("/cookie-token")
+@router.post("/cookie_token")
 async def cookie_login_for_access_token(
     response: Response,
+    db: Annotated[Session, Depends(get_db)],
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> dict:
-    user = authenticate_user(form_data.username, form_data.password)
+    user = authenticate_user(form_data.username, form_data.password, db)
+    logger.debug(f"Authenticating user through cookie: {user.email}")
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"})
     token = create_access_token(
         user.email,
@@ -109,6 +112,7 @@ async def cookie_login_for_access_token(
 @router.post("/cookie-logout")
 def cookie_logout(response: Response):
     response.delete_cookie("access_token")
+    logger.debug("Logging out user")
     return {"message": "Logout successful"}
 
 

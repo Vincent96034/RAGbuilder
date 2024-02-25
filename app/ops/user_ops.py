@@ -1,10 +1,9 @@
 import os
 import logging
+from typing import Optional
 from dotenv import load_dotenv
-from typing import Annotated
 from datetime import timedelta, datetime
 
-from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.requests import Request
 from passlib.context import CryptContext
@@ -67,23 +66,18 @@ def create_access_token(email: str, user_id: int, expires_delta: timedelta) -> T
         algorithm=ENCRYPTION_ALGORITHM)
 
 
-async def get_token_from_request(request: Request) -> str:
-    """Extracts the token from the request headers or cookies. This is used as to get the
-    token from the request object for web (cookie) based authentication.
-    """
-    token = request.headers.get("Authorization")
+async def get_token_from_request(request: Request) -> Optional[str]:
+    """Attempt to extract the token from the Authorization header; if not found, check
+    cookies."""
+    token = request.cookies.get("access_token", None)
     if token is None:
-        token = request.cookies.get("access_token")
-    if token is None:
-        raise_unauthorized_exception("Not authenticated")
+        print("Calling from oauth2_bearer")
+        token: str = await oauth2_bearer(request)
     return token
 
 
 def decode_token(token: str) -> CurrentUserSchema:
     """Decodes the authentication token."""
-    # Strip the "Bearer " prefix if present
-    if token.startswith("Bearer "):
-        token = token[7:]
     try:
         payload = jwt.decode(
             token=token,
@@ -101,21 +95,14 @@ def decode_token(token: str) -> CurrentUserSchema:
         raise_unauthorized_exception()
 
 
-async def get_current_user(
-        request: Request,
-        token: Annotated[str, Depends(oauth2_bearer)] = None
-) -> CurrentUserSchema:
-    """Retrieves the current user based on the provided token. If the token is not
-    provided in the headers, it will attempt to retrieve it from the cookies.
-
-    Args:
-        request (Request): The request object.
-        token (str): The authentication token.
-
-    Returns:
-        CurrentUserSchema: The email and user ID of the current user.
-    """
-    token = await get_token_from_request(request) if token is None else token
+async def get_current_user(request: Request) -> CurrentUserSchema:
+    """Extracts and validates the user's token, either from the Authorization header or
+    cookies, to retrieve the current user."""
+    token = await get_token_from_request(request)
+    if token is None:
+        raise_unauthorized_exception("Not authenticated")
+    if token.startswith("Bearer "):
+        token = token[7:]
     return decode_token(token)
     
 
