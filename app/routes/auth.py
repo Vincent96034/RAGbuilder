@@ -1,5 +1,5 @@
-import logging
 import os
+import logging
 from typing import Annotated
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -19,7 +19,7 @@ from app.ops.user_ops import (authenticate_user, create_access_token,
                               delete_and_commit_user)
 
 load_dotenv(".env")
-logger = logging.getLogger('app')
+logger = logging.getLogger("uvicorn")
 
 # Create the API router for the auth endpoints
 router = APIRouter(
@@ -45,6 +45,7 @@ async def create_user(
     Returns:
         dict: A message indicating the user was created.
     """
+    logger.debug(f"Creating user with email: {request.email}")
     if check_user_exists(request.email, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -90,7 +91,6 @@ async def cookie_login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> dict:
     user = authenticate_user(form_data.username, form_data.password, db)
-    logger.debug(f"Authenticating user through cookie: {user.email}")
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -109,7 +109,7 @@ async def cookie_login_for_access_token(
     return {"message": "Login successful"}
 
 
-@router.post("/cookie-logout")
+@router.post("/cookie_logout")
 def cookie_logout(response: Response):
     response.delete_cookie("access_token")
     logger.debug("Logging out user")

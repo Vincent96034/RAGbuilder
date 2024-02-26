@@ -24,7 +24,7 @@ def home(request: Request, current_user: Annotated[CurrentUserSchema, Depends(ge
 
 @router.get("/login")
 def login(request: Request):
-    return templates.TemplateResponse(name="login.html", context={"request": request})
+    return templates.TemplateResponse(name="login_v3.html", context={"request": request})
 
 
 @router.get("/user")

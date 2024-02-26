@@ -16,7 +16,7 @@ from app.ops.exceptions import raise_unauthorized_exception
 
 
 load_dotenv(".env")
-logger = logging.getLogger('app')
+logger = logging.getLogger("uvicorn")
 
 # Get the values from the .env file
 ENCRYPTION_SECRET_KEY = os.getenv("ENCRYPTION_SECRET_KEY")
@@ -40,9 +40,10 @@ def authenticate_user(email: str, password: str, db: Session) -> UserModel:
     """
     user = db.query(UserModel).filter(UserModel.email == email).first()
     if not user:
-        return False
+        user = False
     if not bcrypt.verify(password, user.hashed_password):
-        return False
+        user = False
+    logger.debug(f"Authenticated user {email}: {user}")
     return user
 
 
@@ -71,7 +72,7 @@ async def get_token_from_request(request: Request) -> Optional[str]:
     cookies."""
     token = request.cookies.get("access_token", None)
     if token is None:
-        print("Calling from oauth2_bearer")
+        logger.debug("Token not found in cookies")
         token: str = await oauth2_bearer(request)
     return token
 
