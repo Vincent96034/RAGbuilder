@@ -23,6 +23,7 @@
             border-radius: 0.5rem;
             padding: 0.05rem 0.2rem;
             transition: background-color 0.3s, transform 0.3s;
+            width: 4rem;
         }
 
         .button:hover {
@@ -36,13 +37,14 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div id="app" class="flex flex-col items-center">
-        <form @submit.prevent="handleSubmit" class="flex flex-col items-center">
-            <input type="email" v-model="user.email" placeholder="Enter Email"
+        <form @submit.prevent="handleSubmit" class="flex flex-col">
+            <input type="email" v-model="user.email" placeholder="EMAIL"
                 class="bg-transparent border-none py-2 focus:outline-none" @input="handleInput">
-            <input type="password" v-model="user.password" placeholder="Enter Password"
+            <input type="password" v-model="user.password" placeholder="PASSWORD"
                 class="bg-transparent border-none py-2 focus:outline-none" v-if="showPasswordInput">
+            <br>
             <button type="submit" class="button" v-if="showSubmitButton">
-                Enter
+                ENTER
             </button>
         </form>
     </div>
@@ -68,8 +70,8 @@
                 },
                 async handleSubmit() {
                     const formData = new URLSearchParams();
-                    formData.append('username', this.email);
-                    formData.append('password', this.password);
+                    formData.append('username', this.user.email);
+                    formData.append('password', this.user.password);
 
                     try {
                         const response = await fetch('/auth/cookie_token', {

@@ -19,7 +19,7 @@ from app.ops.user_ops import (authenticate_user, create_access_token,
                               delete_and_commit_user)
 
 load_dotenv(".env")
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger(__name__)
 
 # Create the API router for the auth endpoints
 router = APIRouter(
@@ -90,6 +90,7 @@ async def cookie_login_for_access_token(
     db: Annotated[Session, Depends(get_db)],
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> dict:
+    logger.debug(f"User with email '{form_data.username}' calling /cookie_token")
     user = authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(

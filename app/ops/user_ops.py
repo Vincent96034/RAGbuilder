@@ -16,7 +16,7 @@ from app.ops.exceptions import raise_unauthorized_exception
 
 
 load_dotenv(".env")
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger(__name__)
 
 # Get the values from the .env file
 ENCRYPTION_SECRET_KEY = os.getenv("ENCRYPTION_SECRET_KEY")
@@ -39,11 +39,10 @@ def authenticate_user(email: str, password: str, db: Session) -> UserModel:
         User: The user object.
     """
     user = db.query(UserModel).filter(UserModel.email == email).first()
-    if not user:
-        user = False
+    if user is None:
+        return False
     if not bcrypt.verify(password, user.hashed_password):
-        user = False
-    logger.debug(f"Authenticated user {email}: {user}")
+        return False
     return user
 
 

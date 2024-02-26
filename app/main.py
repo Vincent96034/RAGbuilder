@@ -2,14 +2,13 @@ import logging.config
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-from db import engine, Base
-from routes.auth import router as auth_router
-from routes.root import router as root_router
+from app.db import engine, Base
+from app.routes.auth import router as auth_router
+from app.routes.root import router as root_router
 
 
 logging.config.fileConfig("app/config/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,4 +27,4 @@ app.include_router(auth_router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
