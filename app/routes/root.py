@@ -32,7 +32,14 @@ def home(request: Request, current_user: Annotated[CurrentUserSchema, Depends(ge
 
 @router.get("/login")
 def login(request: Request):
-    return templates.TemplateResponse(name="login_v4.html", context={"request": request})
+    return templates.TemplateResponse(name="login.html", context={"request": request})
+
+
+# create test route that returns a list with n integers counting up 
+@router.get("/test")
+async def test(n: int = 10) -> dict:
+    ret = [f"Test {i}" for i in range(n)]
+    return {"Test": ret}
 
 
 @router.get("/user")
