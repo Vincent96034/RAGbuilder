@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOGIN</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            color: #2C2C2C;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: transparent;
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #login-button {
+            color: rgb(0, 0, 0);
+            font-weight: bold;
+            background-color: #c3c3c3;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.05rem 0.2rem;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        input {
+            color: #2C2C2C;
+        }
+
+        #login-button:hover {
+            transform: scale(1.03);
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const loginButton = document.getElementById('login-button');
+
+            function toggleButtonVisibility() {
+                if (emailInput.value.length > 0 && passwordInput.value.length > 0) {
+                    loginButton.classList.remove('hidden');
+                } else {
+                    loginButton.classList.add('hidden');
+                }
+            }
+
+            emailInput.addEventListener('keyup', toggleButtonVisibility);
+            passwordInput.addEventListener('keyup', toggleButtonVisibility);
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <form id="login-form" @submit.prevent="login" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <div class="mb-4">
+            <input v-model="email" type="email" id="email" name="email" placeholder="Enter Email" required
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="mb-6">
+            <input v-model="password" type="password" id="password" name="password" placeholder="Enter Password" required
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" id="login-button" class="hidden">
+                Login
+            </button>
+        </div>
+    </form>
+
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    email: '',
+                    password: ''
+                }
+            },
+            methods: {
+                async login() {
+                    const formData = new URLSearchParams();
+                    formData.append('username', this.email);
+                    formData.append('password', this.password);
+
+                    const response = await fetch('/auth/cookie_token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: formData.toString()
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Login Successful:', data);
+                        window.location.href = '/'; // Adjust as needed
+                    } else {
+                        alert('Login Failed: Incorrect email or password');
+                    }
+                }
+            }
+        }).mount('#login-form');
+    </script>
+
+</body>
+</html>
+

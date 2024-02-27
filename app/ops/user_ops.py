@@ -1,22 +1,22 @@
 import os
 import logging
+from typing import Optional
 from dotenv import load_dotenv
-from typing import Annotated
 from datetime import timedelta, datetime
 
-from fastapi import status, Depends
 from fastapi.security import OAuth2PasswordBearer
-from fastapi.exceptions import HTTPException
+from fastapi.requests import Request
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 
 from app.db.models import UserModel
 from app.schemas import TokenSchema, CurrentUserSchema
+from app.ops.exceptions import raise_unauthorized_exception
 
 
 load_dotenv(".env")
-logger = logging.getLogger('app')
+logger = logging.getLogger(__name__)
 
 # Get the values from the .env file
 ENCRYPTION_SECRET_KEY = os.getenv("ENCRYPTION_SECRET_KEY")
@@ -39,7 +39,7 @@ def authenticate_user(email: str, password: str, db: Session) -> UserModel:
         User: The user object.
     """
     user = db.query(UserModel).filter(UserModel.email == email).first()
-    if not user:
+    if user is None:
         return False
     if not bcrypt.verify(password, user.hashed_password):
         return False
@@ -65,17 +65,19 @@ def create_access_token(email: str, user_id: int, expires_delta: timedelta) -> T
         key=ENCRYPTION_SECRET_KEY,
         algorithm=ENCRYPTION_ALGORITHM)
 
-async def get_current_user(
-        token: Annotated[str, Depends(oauth2_bearer)]
-) -> CurrentUserSchema:
-    """Retrieves the current user based on the provided token.
 
-    Args:
-        token (str): The authentication token.
+async def get_token_from_request(request: Request) -> Optional[str]:
+    """Attempt to extract the token from the Authorization header; if not found, check
+    cookies."""
+    token = request.cookies.get("access_token", None)
+    if token is None:
+        logger.debug("Token not found in cookies")
+        token: str = await oauth2_bearer(request)
+    return token
 
-    Returns:
-        dict: A dictionary containing the email and user ID of the current user.
-    """
+
+def decode_token(token: str) -> CurrentUserSchema:
+    """Decodes the authentication token."""
     try:
         payload = jwt.decode(
             token=token,
@@ -84,16 +86,24 @@ async def get_current_user(
         email: str = payload.get("sub")
         user_id: int = payload.get("user_id")
         if email is None or user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"})
+            raise_unauthorized_exception()
         return CurrentUserSchema(email=email, user_id=user_id)
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"})
+    except JWTError as err:
+        logger.error(
+            "JWT Error when decoding token. Invalid authentication credentials. "
+            f"Error: {err}")
+        raise_unauthorized_exception()
+
+
+async def get_current_user(request: Request) -> CurrentUserSchema:
+    """Extracts and validates the user's token, either from the Authorization header or
+    cookies, to retrieve the current user."""
+    token = await get_token_from_request(request)
+    if token is None:
+        raise_unauthorized_exception("Not authenticated")
+    if token.startswith("Bearer "):
+        token = token[7:]
+    return decode_token(token)
     
 
 def create_and_commit_user(email: str, password: str, db: Session) -> dict:

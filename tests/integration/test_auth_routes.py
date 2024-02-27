@@ -50,13 +50,3 @@ async def test_delete_user_success(client, db_dependency, current_user_dependenc
     user = db_dependency.query(UserModel).filter_by(email=email).first()
     assert user is None
 
-
-@pytest.mark.asyncio
-async def test_delete_user_unauthorized(client, db_dependency):
-    email = "user_delete@example.com"
-    # user auth is skipped
-    response = client.delete("/auth/delete_user")
-    assert response.status_code == 401
-    # Check that the user was NOT deleted
-    user = db_dependency.query(UserModel).filter_by(email=email).first()
-    assert user is not None

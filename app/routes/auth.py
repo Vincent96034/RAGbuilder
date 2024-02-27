@@ -1,7 +1,11 @@
+import os
+import logging
 from typing import Annotated
 from datetime import timedelta
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, status, Depends
+from fastapi.responses import Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
@@ -14,12 +18,17 @@ from app.ops.user_ops import (authenticate_user, create_access_token,
                               create_and_commit_user, check_user_exists,
                               delete_and_commit_user)
 
+load_dotenv(".env")
+logger = logging.getLogger(__name__)
 
 # Create the API router for the auth endpoints
 router = APIRouter(
     prefix="/auth",
     tags=["auth"],
     responses={404: {"description": "Not found"}})
+
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES") or 30)
+
 
 
 @router.post("/create_user", status_code=status.HTTP_201_CREATED)
@@ -36,6 +45,7 @@ async def create_user(
     Returns:
         dict: A message indicating the user was created.
     """
+    logger.debug(f"Creating user with email: {request.email}")
     if check_user_exists(request.email, db):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,7 +56,8 @@ async def create_user(
 @router.post("/token", response_model=TokenSchema)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Annotated[Session, Depends(get_db)]) -> dict:
+    db: Annotated[Session, Depends(get_db)]
+) -> dict:
     """Authenticates a user and generates an access token.
 
     Args:
@@ -66,8 +77,44 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"})
-    token = create_access_token(user.email, user.id, timedelta(minutes=30))
+    token = create_access_token(
+        user.email,
+        user.id,
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/cookie_token")
+async def cookie_login_for_access_token(
+    response: Response,
+    db: Annotated[Session, Depends(get_db)],
+    form_data: OAuth2PasswordRequestForm = Depends()
+) -> dict:
+    logger.debug(f"User with email '{form_data.username}' calling /cookie_token")
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"})
+    token = create_access_token(
+        user.email,
+        user.id,
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        secure=True,
+        samesite='Lax')
+    return {"message": "Login successful"}
+
+
+@router.post("/cookie_logout")
+def cookie_logout(response: Response):
+    response.delete_cookie("access_token")
+    logger.debug("Logging out user")
+    return {"message": "Logout successful"}
 
 
 @router.delete("/delete_user", status_code=status.HTTP_200_OK)

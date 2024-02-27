@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOGIN</title>
+    <!-- Include Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            color: #2C2C2C;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .button {
+            color: #000;
+            font-weight: bold;
+            background-color: #c3c3c3;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.05rem 0.2rem;
+            transition: background-color 0.3s, transform 0.3s;
+            width: 4rem;
+        }
+
+        .button:hover {
+            transform: scale(1.03);
+        }
+
+        input {
+            color: #2C2C2C;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div id="app" class="flex flex-col items-center">
+        <form @submit.prevent="handleSubmit" class="flex flex-col">
+            <input type="email" v-model="user.email" placeholder="EMAIL"
+                class="bg-transparent border-none py-2 focus:outline-none" @input="handleInput">
+            <input type="password" v-model="user.password" placeholder="PASSWORD"
+                class="bg-transparent border-none py-2 focus:outline-none" v-if="showPasswordInput">
+            <br>
+            <button type="submit" class="button" v-if="showSubmitButton">
+                ENTER
+            </button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.4/dist/vue.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    user: {
+                        email: '',
+                        password: ''
+                    },
+                    showPasswordInput: false,
+                    showSubmitButton: false
+                };
+            },
+            methods: {
+                handleInput() {
+                    this.showPasswordInput = this.user.email.length > 0;
+                    this.showSubmitButton = this.user.email.length > 0; // && this.user.password.length > 0;
+                },
+                async handleSubmit() {
+                    const formData = new URLSearchParams();
+                    formData.append('username', this.user.email);
+                    formData.append('password', this.user.password);
+
+                    try {
+                        const response = await fetch('/auth/cookie_token', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: formData.toString()
+                        });
+
+                        if (response.ok) {
+                            const data = await response.json();
+                            // Handle successful login here, for example by redirecting
+                            window.location.href = '/home';
+                        } else {
+                            // Handle errors here
+                            console.error('Login failed:', response.status, response.statusText);
+                        }
+                    } catch (error) {
+                        console.error('Error during login:', error);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

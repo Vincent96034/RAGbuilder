@@ -1,12 +1,11 @@
 import os
-import logging
 from dotenv import load_dotenv
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-logger = logging.getLogger('app')
+from app.utils.logger_config import logger
 
 # Load the environment variables from the .env file
 load_dotenv(".env")

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOME</title>
+    <title>HELLO</title>
     <!-- Include Tailwind CSS -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
@@ -64,21 +64,10 @@
             });
         });
     </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Example: Check if an 'authToken' cookie exists
-            const isAuthenticated = document.cookie.split(';').some((item) => item.trim().startsWith('authToken='));
-        
-            // If not authenticated, redirect to login page
-            if (!isAuthenticated) {
-                window.location.href = '/login'; // Change '/login' to the path of your login page
-            }
-        });
-        </script>
 </head>
 
 <body class="bg-gray-100 flex items-center justify-center h-screen">
-    <p style="color: #2C2C2C;">home</p>
+    <p style="color: #2C2C2C;">hello</p>
 </body>
 
 </html>
