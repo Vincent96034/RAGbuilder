@@ -35,6 +35,13 @@ def login(request: Request):
     return templates.TemplateResponse(name="login_v4.html", context={"request": request})
 
 
+# create test route that returns a list with n integers counting up 
+@router.get("/test")
+async def test(n: int = 10) -> dict:
+    ret = [f"Test {i}" for i in range(n)]
+    return {"Test": ret}
+
+
 @router.get("/user")
 async def user(user: Annotated[CurrentUserSchema, Depends(get_current_user)]) -> dict:
     if user is None:

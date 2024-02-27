@@ -1,6 +1,7 @@
 import logging.config
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import engine, Base
 from app.routes.auth import router as auth_router
@@ -24,6 +25,18 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(root_router)
 app.include_router(auth_router)
 
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if __name__ == "__main__":
     import uvicorn
