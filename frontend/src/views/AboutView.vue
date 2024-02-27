@@ -1,5 +1,8 @@
 <template>
-  <div class="about">
-    <h1>This is an about page</h1>
+  <head>
+    <title>About</title>
+  </head>
+  <div class="home flex items-center justify-center h-screen">
+    <p style="color: var(--text-color);">about</p>
   </div>
 </template>
