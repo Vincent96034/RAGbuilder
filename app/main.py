@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down the application")
 
 
-# RUN USING:   uvicorn app.main:app --reload --log-level debug
+# RUN USING:   uvicorn app.main:app --reload
 app = FastAPI(lifespan=lifespan)
 app.include_router(root_router)
 app.include_router(auth_router)
