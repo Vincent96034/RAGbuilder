@@ -106,7 +106,7 @@ async def get_current_user(request: Request) -> CurrentUserSchema:
     return decode_token(token)
     
 
-def create_and_commit_user(email: str, password: str, db: Session) -> dict:
+def create_and_commit_user(first_name: str, last_name: str, email: str, password: str, db: Session) -> dict:
     """Create a new user in the database. Hashes the password before storing it.
 
     Args:
@@ -114,11 +114,14 @@ def create_and_commit_user(email: str, password: str, db: Session) -> dict:
         db (Session): The database session.
 
     Returns:
-        None
+        Message: success message
     """
     create_user_model = UserModel(
+        first_name=first_name,
+        last_name=last_name,
         email=email,
-        hashed_password=bcrypt.hash(password))
+        hashed_password=bcrypt.hash(password),
+        created_at=datetime.now())
     db.add(create_user_model)
     db.commit()
     logger.debug(f"Created User '{email}'")

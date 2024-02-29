@@ -5,10 +5,10 @@ from app.db.models import UserModel
 
 
 @pytest.mark.parametrize("email,password,expected_status", [
-    ("user1@example.com", "password1", 400),
-    ("nonexistent@example.com", "password1", 201),
+    ("Max", "Muster", "user1@example.com", "password1", 400),
+    ("Max", "Muster", "nonexistent@example.com", "password1", 201),
 ])
-def test_create_user_success(client, db_dependency, email, password, expected_status):
+def test_create_user_success(client, db_dependency, fname, lname, email, password, expected_status):
     response = client.post(
         "/auth/create_user",
         json={"email": email, "password": password})

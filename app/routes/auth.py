@@ -30,7 +30,6 @@ router = APIRouter(
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES") or 30)
 
 
-
 @router.post("/create_user", status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: CreateUserRequestSchema,
@@ -50,7 +49,8 @@ async def create_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User already exists")
-    return create_and_commit_user(request.email, request.password, db)
+    return create_and_commit_user(
+        request.first_name, request.last_name, request.email, request.password, db)
 
 
 @router.post("/token", response_model=TokenSchema)
