@@ -46,7 +46,7 @@ def authenticate_user(email: str, password: str, db: Session) -> UserModel:
     return user
 
 
-def create_access_token(email: str, user_id: int, expires_delta: timedelta) -> TokenSchema:
+def create_token(email: str, user_id: int, expires_delta: timedelta) -> TokenSchema:
     """Create an access token for the user.
 
     Args:
@@ -77,7 +77,7 @@ async def get_token_from_request(request: Request) -> Optional[str]:
 
 
 def decode_token(token: str) -> CurrentUserSchema:
-    """Decodes the authentication token."""
+    """Decodes the authentication token and raises an exception if the token is invalid."""
     try:
         payload = jwt.decode(
             token=token,
@@ -104,9 +104,9 @@ async def get_current_user(request: Request) -> CurrentUserSchema:
     if token.startswith("Bearer "):
         token = token[7:]
     return decode_token(token)
-    
 
-def create_and_commit_user(email: str, password: str, db: Session) -> dict:
+
+def create_and_commit_user(first_name: str, last_name: str, email: str, password: str, db: Session) -> UserModel:
     """Create a new user in the database. Hashes the password before storing it.
 
     Args:
@@ -114,16 +114,19 @@ def create_and_commit_user(email: str, password: str, db: Session) -> dict:
         db (Session): The database session.
 
     Returns:
-        None
+        Message: success message
     """
-    create_user_model = UserModel(
+    new_user = UserModel(
+        first_name=first_name,
+        last_name=last_name,
         email=email,
-        hashed_password=bcrypt.hash(password))
-    db.add(create_user_model)
+        hashed_password=bcrypt.hash(password),
+        created_at=datetime.now())
+    db.add(new_user)
     db.commit()
     logger.debug(f"Created User '{email}'")
-    return {"message": "User created successfully"}
-    
+    return new_user
+
 
 def check_user_exists(email: str, db: Session) -> bool:
     """Check if a user exists in the database.
@@ -152,3 +155,23 @@ def delete_and_commit_user(email: str, db: Session) -> dict:
     db.commit()
     logger.debug(f"Deleted User '{email}'")
     return {"message": "User deleted successfully"}
+
+
+# def create_and_commit_user_verification_token(email: str, verification_token: str, db: Session) -> dict:
+#     """Create a new user verification token in the database.
+
+#     Args:
+#         email (str): The user's email.
+#         verification_token (str): The verification token.
+#         db (Session): The database session.
+
+#     Returns:
+#         Message: success message
+#     """
+#     create_verification_token_model = VerificationTokenModel(
+#         email=email,
+#         verification_token=verification_token)
+#     db.add(create_verification_token_model)
+#     db.commit()
+#     logger.debug(f"Created verification token for User '{email}'")
+#     return {"message": "Verification token created successfully"}

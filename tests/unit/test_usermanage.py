@@ -5,11 +5,16 @@ from app.ops.user_ops import (create_and_commit_user,
 
 
 def test_create_and_commit_user(db_dependency):
-    response = create_and_commit_user(
+    user = create_and_commit_user(
+        first_name="Test",
+        last_name="User",
         email="test_user@example.com",
         password="password123",
         db=db_dependency)
-    assert response["message"] == "User created successfully"
+    assert user.email == "test_user@example.com"
+    assert user.first_name == "Test"
+    assert user.last_name == "User"
+    assert user.hashed_password is not None
     user_exists = check_user_exists("test_user@example.com", db_dependency)
     assert user_exists is True
 
@@ -33,7 +38,7 @@ def test_check_user_exists(db_dependency, email, expected):
 def test_delete_and_commit_user(db_dependency, email, creation_needed, expected_message):
     # Create a user first if needed
     if creation_needed:
-        create_and_commit_user(email, "password", db_dependency)
+        create_and_commit_user("Test", "User", email, "password", db_dependency)
     response = delete_and_commit_user(email, db_dependency)
     assert response["message"] == expected_message
     # Verify the user no longer exists

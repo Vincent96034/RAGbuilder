@@ -12,11 +12,9 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.schemas import CreateUserRequestSchema, TokenSchema, CurrentUserSchema
-from app.ops.user_ops import get_current_user
 
-from app.ops.user_ops import (authenticate_user, create_access_token,
-                              create_and_commit_user, check_user_exists,
-                              delete_and_commit_user)
+from app.ops.user_ops import (get_current_user, authenticate_user, create_token,
+                              create_and_commit_user, check_user_exists, delete_and_commit_user)
 
 load_dotenv(".env")
 logger = logging.getLogger(__name__)
@@ -28,7 +26,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}})
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES") or 30)
-
+#VERIFICATION_TOKEN_EXPIRE_MINUTES = int(os.getenv("VERIFICATION_TOKEN_EXPIRE_MINUTES") or 7)
 
 
 @router.post("/create_user", status_code=status.HTTP_201_CREATED)
@@ -50,7 +48,8 @@ async def create_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User already exists")
-    return create_and_commit_user(request.email, request.password, db)
+    _ = create_and_commit_user(request.first_name, request.last_name, request.email, request.password, db)
+    return {"message": "User created successfully"}
 
 
 @router.post("/token", response_model=TokenSchema)
@@ -77,9 +76,9 @@ async def login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"})
-    token = create_access_token(
+    token = create_token(
         user.email,
-        user.id,
+        user.user_id,
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": token, "token_type": "bearer"}
 
@@ -97,7 +96,7 @@ async def cookie_login_for_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"})
-    token = create_access_token(
+    token = create_token(
         user.email,
         user.id,
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -135,3 +134,36 @@ async def delete_user(
     if user is None:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return delete_and_commit_user(user.email, db)
+
+
+# @router.post("/register", status_code=status.HTTP_201_CREATED)
+# async def register_user(
+#     request: CreateUserRequestSchema,
+#     db: Annotated[Session, Depends(get_db)]
+# ) -> dict:
+#     # create user in db
+#     logger.debug(f"Creating user with email: {request.email}")
+#     if check_user_exists(request.email, db):
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="User already exists")
+#     new_user = create_and_commit_user(
+#         request.first_name, request.last_name, request.email, request.password, db)
+#     # create verification token
+#     verification_token = create_token(
+#         new_user.email, new_user.user_id, expires_delta = VERIFICATION_TOKEN_EXPIRE_MINUTES)
+#     create_and_commit_user_verification_token(new_user.email, verification_token, db)
+#     # send email with verification token
+#     send_user_verification_email(request.email, verification_token)
+#     return {"message": "User created successfully"}
+
+
+# @router.post("/verify_user/{verification_token}", status_code=status.HTTP_200_OK)
+# async def verify_user(verification_token):
+#     current_user = decode_token(verification_token)
+#     if current_user is None:
+#         raise HTTPException(status_code=401, detail="Unauthorized")
+#     # verify user
+#     verify_user_in_db(current_user.email)
+#     delete_and_commit_user_verification_token(current_user.email)
+#     return {"message": "User verified successfully"}
