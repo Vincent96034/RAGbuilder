@@ -4,17 +4,23 @@ from app.schemas import CurrentUserSchema
 from app.db.models import UserModel
 
 
-@pytest.mark.parametrize("email,password,expected_status", [
+@pytest.mark.parametrize("fname,lname,email,password,expected_status", [
     ("Max", "Muster", "user1@example.com", "password1", 400),
     ("Max", "Muster", "nonexistent@example.com", "password1", 201),
 ])
 def test_create_user_success(client, db_dependency, fname, lname, email, password, expected_status):
     response = client.post(
         "/auth/create_user",
-        json={"email": email, "password": password})
+        json={"first_name": fname, "last_name": lname, "email": email, "password": password})
     assert response.status_code == expected_status
     if expected_status == 201:
         assert response.json().get("message") == "User created successfully"
+        user = db_dependency.query(UserModel).filter_by(email=email).first()
+        assert user is not None
+        assert user.email == email
+        assert user.first_name == fname
+        assert user.last_name == lname
+        assert user.hashed_password is not None
     if expected_status != 201:
         assert response.json().get("detail") == "User already exists"
 

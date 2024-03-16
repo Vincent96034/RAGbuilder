@@ -78,7 +78,7 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"})
     token = create_token(
         user.email,
-        user.id,
+        user.user_id,
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": token, "token_type": "bearer"}
 
