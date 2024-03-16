@@ -5,7 +5,7 @@ from datetime import timedelta
 from fastapi import HTTPException
 from unittest.mock import patch
 
-from app.ops.user_ops import authenticate_user, create_access_token, decode_token
+from app.ops.user_ops import authenticate_user, create_token, decode_token
 
 
 @pytest.mark.parametrize(
@@ -32,7 +32,7 @@ def test_create_access_token_claims(mock_env_vars):
     email = "user1@example.com"
     user_id = 1
     expires_delta = timedelta(minutes=5)
-    token = create_access_token(email, user_id, expires_delta)
+    token = create_token(email, user_id, expires_delta)
     current_user = decode_token(token)
     #payload = jwt.decode(token, encryption_secret_key, algorithms=[encryption_algorithm])
     assert current_user.email == email
@@ -44,7 +44,7 @@ def test_create_access_token_expiration(mock_env_vars):
     email = "user1@example.com"
     user_id = 1
     expires_delta = timedelta(seconds=1)  # Short expiration for test
-    token = create_access_token(email, user_id, expires_delta)
+    token = create_token(email, user_id, expires_delta)
     time.sleep(2)  # Wait for the token to expire
     with pytest.raises(HTTPException):
         _ = decode_token(token)
@@ -67,5 +67,5 @@ def test_authenticate_user_failure(mock_db_session):
 
 
 def test_create_access_token(mock_env_vars):
-    token = create_access_token("test@example.com", 1, timedelta(minutes=30))
+    token = create_token("test@example.com", 1, timedelta(minutes=30))
     assert token is not None

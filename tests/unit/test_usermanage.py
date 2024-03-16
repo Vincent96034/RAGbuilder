@@ -5,13 +5,16 @@ from app.ops.user_ops import (create_and_commit_user,
 
 
 def test_create_and_commit_user(db_dependency):
-    response = create_and_commit_user(
+    user = create_and_commit_user(
         first_name="Test",
         last_name="User",
         email="test_user@example.com",
         password="password123",
         db=db_dependency)
-    assert response["message"] == "User created successfully"
+    assert user.email == "test_user@example.com"
+    assert user.first_name == "Test"
+    assert user.last_name == "User"
+    assert user.hashed_password is not None
     user_exists = check_user_exists("test_user@example.com", db_dependency)
     assert user_exists is True
 
