@@ -36,6 +36,7 @@ def authenticate_user(token: str) -> CurrentUserSchema:
         raise_unauthorized_exception("Invalid token.")
 
 
+#? This function is not used in the codebase
 async def get_token_from_request(request: Request) -> Optional[str]:
     """Attempt to extract the token from the Authorization header; if not found, check
     cookies."""
@@ -140,3 +141,4 @@ def delete_and_commit_user(email: str) -> dict:
     auth.delete_user(uid)
     logger.debug(f"Deleted User '{email}'")
     return {"message": "User deleted successfully"}
+
