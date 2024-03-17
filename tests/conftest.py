@@ -3,9 +3,6 @@ import pytest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
-from sqlalchemy.orm import sessionmaker, Session
-from unittest.mock import MagicMock
 
 from app.ops.user_ops import get_current_user
 from app.schemas import CurrentUserSchema
@@ -59,20 +56,20 @@ def mock_firebase_user():
 
 
 ## v0 mocks
-@pytest.fixture(scope="session")
-def engine():
-    """Fixture that returns a SQLAlchemy engine connected to an in-memory SQLite db."""
-    return create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+# @pytest.fixture(scope="session")
+# def engine():
+#     """Fixture that returns a SQLAlchemy engine connected to an in-memory SQLite db."""
+#     return create_engine(
+#         "sqlite:///:memory:",
+#         connect_args={"check_same_thread": False},
+#         poolclass=StaticPool,
+#     )
 
 
-@pytest.fixture(scope="session")
-def TestingSessionLocal(engine):
-    """Fixture that returns a sessionmaker object for testing purposes."""
-    return sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# @pytest.fixture(scope="session")
+# def TestingSessionLocal(engine):
+#     """Fixture that returns a sessionmaker object for testing purposes."""
+#     return sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 @pytest.fixture
@@ -145,11 +142,11 @@ def mock_env_vars(monkeypatch):
     monkeypatch.setenv("ENCRYPTION_ALGORITHM", "HS256")
 
 
-@pytest.fixture
-def mock_db_session():
-    """Fixture to mock the database session."""
-    session = MagicMock(spec=Session)
-    return session
+# @pytest.fixture
+# def mock_db_session():
+#     """Fixture to mock the database session."""
+#     session = MagicMock(spec=Session)
+#     return session
 
 
 @pytest.fixture

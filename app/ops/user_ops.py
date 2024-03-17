@@ -1,5 +1,6 @@
 import logging
 from typing import Optional
+from dotenv import load_dotenv
 
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.requests import Request
@@ -11,6 +12,7 @@ from app.schemas import CurrentUserSchema, TokenSchema
 from app.ops.exceptions import raise_unauthorized_exception
 
 
+load_dotenv(".env")
 logger = logging.getLogger(__name__)
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/token")
 security = HTTPBearer()
@@ -53,17 +55,6 @@ async def get_current_user(auth: HTTPAuthorizationCredentials = Security(securit
     token = auth.credentials
     logger.debug(f"Token: {token}")
     return authenticate_user(token)
-
-
-# async def get_current_user(request: Request) -> CurrentUserSchema:
-#     """Extracts and validates the user's token, either from the Authorization header or
-#     cookies, to retrieve the current user."""
-#     token = await get_token_from_request(request)
-#     if token is None:
-#         raise_unauthorized_exception("Not authenticated")
-#     if token.startswith("Bearer "):
-#         token = token[7:]
-#     return authenticate_user(token)
 
 
 def create_and_commit_user(first_name: str, last_name: str, email: str, password: str) -> UserModel:
@@ -121,6 +112,7 @@ def create_access_token(email: str, password: str) -> TokenSchema:
     Returns:
         dict: A dictionary containing the access token and token type.
     """
+    # ! deprecated
     user = auth.sign_in_with_email_and_password(
         email = email,
         password = password

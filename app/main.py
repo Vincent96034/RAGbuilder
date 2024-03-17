@@ -7,26 +7,20 @@ from firebase_admin import credentials
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db import Base, engine
 from app.routes.auth import router as auth_router
 from app.routes.root import router as root_router
 from contextlib import asynccontextmanager
 
 
 load_dotenv(".env")
-
 logging.config.fileConfig("app/config/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
-drop_tables = False
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting the application ...")
     logger.debug(f"Logging level: {logging.getLevelName(logger.getEffectiveLevel())}")
-    if drop_tables:
-        logger.info("Dropping all tables")
-        Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
     yield
     logger.info("Shutting down the application")
 

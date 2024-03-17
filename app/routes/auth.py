@@ -42,7 +42,7 @@ async def create_user(
             detail="User already exists")
     user = create_and_commit_user(
         request.first_name, request.last_name, request.email, request.password)
-    logger.debug(f"User created: {user.email}; Token: {user.token}")
+    logger.debug(f"User created: {user.email}")
     return {"uid": user.user_id, "message": "User created successfully"}
 
 
@@ -67,7 +67,7 @@ async def verify_token(
 
 @router.post('/create_access_token', response_model=TokenSchema)
 async def create_access_token_route(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    email = form_data.email
+    email = form_data.username
     password = form_data.password
     return create_access_token(email, password)
 
