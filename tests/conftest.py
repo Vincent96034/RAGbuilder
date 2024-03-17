@@ -1,33 +1,75 @@
 # conftest.py
 import pytest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, StaticPool
-from sqlalchemy.orm import sessionmaker, Session
-from unittest.mock import MagicMock
 
-from app.ops.user_ops import get_current_user, bcrypt
+from app.ops.user_ops import get_current_user
 from app.schemas import CurrentUserSchema
 from app.main import app
-from app.db import Base, get_db
 from app.db.models import UserModel
 
 
 
-@pytest.fixture(scope="session")
-def engine():
-    """Fixture that returns a SQLAlchemy engine connected to an in-memory SQLite db."""
-    return create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+## v1 mocks
+
+# Sample user data
+user_id = "user123"
+email = "user@example.com"
+first_name = "John"
+last_name = "Doe"
+password = "securePassword123"
 
 
-@pytest.fixture(scope="session")
-def TestingSessionLocal(engine):
-    """Fixture that returns a sessionmaker object for testing purposes."""
-    return sessionmaker(autocommit=False, autoflush=False, bind=engine)
+@pytest.fixture
+def mock_auth_verify_id_token_success():
+    with patch('app.ops.user_ops.auth.verify_id_token') as mock:
+        mock.return_value = {"email": email, "user_id": user_id}
+        yield mock
+
+
+@pytest.fixture
+def mock_auth_verify_id_token_failure(exception):
+    with patch('app.ops.user_ops.auth.verify_id_token') as mock:
+        mock.side_effect = exception("Mocked exception")
+        yield mock
+
+
+@pytest.fixture
+def mock_firebase_user():
+    """Fixture for mocking a Firebase user creation."""
+    class MockUserRecord:
+        def __init__(self, uid, email, display_name, email_verified, disabled):
+            self.uid = uid
+            self.email = email
+            self.display_name = display_name
+            self.email_verified = email_verified
+            self.disabled = disabled
+            self.user_metadata = MockUserMetadata()
+
+    class MockUserMetadata:
+        creation_timestamp = "2023-01-01T00:00:00Z"
+
+    return MockUserRecord(user_id, email, f"{first_name} {last_name}", False, False)
+
+
+
+
+## v0 mocks
+# @pytest.fixture(scope="session")
+# def engine():
+#     """Fixture that returns a SQLAlchemy engine connected to an in-memory SQLite db."""
+#     return create_engine(
+#         "sqlite:///:memory:",
+#         connect_args={"check_same_thread": False},
+#         poolclass=StaticPool,
+#     )
+
+
+# @pytest.fixture(scope="session")
+# def TestingSessionLocal(engine):
+#     """Fixture that returns a sessionmaker object for testing purposes."""
+#     return sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 @pytest.fixture
@@ -37,32 +79,32 @@ def client():
         yield client
 
 
-@pytest.fixture(scope="function")
-def db_dependency(TestingSessionLocal, engine):
-    Base.metadata.create_all(bind=engine)  # Create the tables in the in-memory database
-    db = TestingSessionLocal()
-    # Insert test data
-    test_users = [
-        UserModel(email="user1@example.com", hashed_password=bcrypt.hash("password1")),
-        UserModel(email="user2@example.com", hashed_password=bcrypt.hash("password2")),
-        UserModel(email="user_delete@example.com",
-                  hashed_password=bcrypt.hash("password_delete")),
-    ]
-    db.add_all(test_users)
-    db.commit()
-    # Override get_db dependency with this session
+# @pytest.fixture(scope="function")
+# def db_dependency(TestingSessionLocal, engine):
+#     Base.metadata.create_all(bind=engine)  # Create the tables in the in-memory database
+#     db = TestingSessionLocal()
+#     # Insert test data
+#     test_users = [
+#         UserModel(email="user1@example.com", hashed_password=bcrypt.hash("password1")),
+#         UserModel(email="user2@example.com", hashed_password=bcrypt.hash("password2")),
+#         UserModel(email="user_delete@example.com",
+#                   hashed_password=bcrypt.hash("password_delete")),
+#     ]
+#     db.add_all(test_users)
+#     db.commit()
+#     # Override get_db dependency with this session
 
-    def override_get_db():
-        try:
-            yield db
-        finally:
-            db.close()
-    app.dependency_overrides[get_db] = override_get_db
-    yield db
-    # Clean up the database
-    db.query(UserModel).delete()
-    db.commit()
-    Base.metadata.drop_all(bind=engine)
+#     def override_get_db():
+#         try:
+#             yield db
+#         finally:
+#             db.close()
+#     app.dependency_overrides[get_db] = override_get_db
+#     yield db
+#     # Clean up the database
+#     db.query(UserModel).delete()
+#     db.commit()
+#     Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
@@ -100,11 +142,11 @@ def mock_env_vars(monkeypatch):
     monkeypatch.setenv("ENCRYPTION_ALGORITHM", "HS256")
 
 
-@pytest.fixture
-def mock_db_session():
-    """Fixture to mock the database session."""
-    session = MagicMock(spec=Session)
-    return session
+# @pytest.fixture
+# def mock_db_session():
+#     """Fixture to mock the database session."""
+#     session = MagicMock(spec=Session)
+#     return session
 
 
 @pytest.fixture

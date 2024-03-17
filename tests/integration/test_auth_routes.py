@@ -1,58 +1,79 @@
 import pytest
+from fastapi.testclient import TestClient
+from fastapi import HTTPException
+from http import HTTPStatus
 
+from app.main import app
 from app.schemas import CurrentUserSchema
-from app.db.models import UserModel
 
 
-@pytest.mark.parametrize("fname,lname,email,password,expected_status", [
-    ("Max", "Muster", "user1@example.com", "password1", 400),
-    ("Max", "Muster", "nonexistent@example.com", "password1", 201),
+client = TestClient(app)
+
+
+@pytest.mark.parametrize("existing_user, expected_status, expected_detail", [
+    (False, HTTPStatus.CREATED, "User created successfully"),
+    (True, HTTPStatus.BAD_REQUEST, "User already exists"),
 ])
-def test_create_user_success(client, db_dependency, fname, lname, email, password, expected_status):
-    response = client.post(
-        "/auth/create_user",
-        json={"first_name": fname, "last_name": lname, "email": email, "password": password})
+def test_create_user_route(existing_user, expected_status, expected_detail, mocker):
+    # Mock dependencies
+    mocker.patch('app.routes.auth.check_user_exists', return_value=existing_user)
+    mock_create_user = mocker.patch(
+        'app.routes.auth.create_and_commit_user', return_value=mocker.Mock(user_id="12345"))
+    # create test user and send post request
+    user_data = {
+        "first_name": "Test",
+        "last_name": "User",
+        "email": "testuser@example.com",
+        "password": "a_secure_password"}
+    response = client.post("/auth/create_user", json=user_data)
+    # assert response
     assert response.status_code == expected_status
-    if expected_status == 201:
-        assert response.json().get("message") == "User created successfully"
-        user = db_dependency.query(UserModel).filter_by(email=email).first()
-        assert user is not None
-        assert user.email == email
-        assert user.first_name == fname
-        assert user.last_name == lname
-        assert user.hashed_password is not None
-    if expected_status != 201:
-        assert response.json().get("detail") == "User already exists"
+    if existing_user:
+        assert response.json()["detail"] == expected_detail
+    else:
+        assert response.json()["message"] == expected_detail
+        mock_create_user.assert_called_once_with(
+            "Test", "User", "testuser@example.com", "a_secure_password")
 
 
-@pytest.mark.parametrize("email,password,expected_status,expected_key", [
-    ("user1@example.com", "password1", 200, "access_token"),
-    ("user1@example.com", "wrongpassword", 401, "detail"),
-    ("nonexistent@example.com", "password1", 401, "detail"),
+@pytest.mark.parametrize("token_valid, expected_status, expected_response", [
+    (True, HTTPStatus.OK, {"email": "user@example.com", "user_id": "user123"}),
+    (False, HTTPStatus.UNAUTHORIZED, {"detail": "Invalid token."}),
 ])
-def test_login_for_access_token(client, db_dependency, email, password, expected_status, expected_key):
-    response = client.post(
-        "/auth/token",
-        data={"username": email, "password": password})
-    assert response.status_code == expected_status
-    assert expected_key in response.json()
-    if expected_status == 200:
-        assert "token_type" in response.json()
-        assert response.json()["token_type"] == "bearer"
-        assert response.json()["access_token"] is not None
-    if expected_status != 200:
-        assert response.json().get("detail") == "Incorrect email or password"
-        
+def test_verify_token_route(token_valid, expected_status, expected_response, mocker):
+    # Mock `authenticate_user` based on the token validity
+    if token_valid:
+        mock_user = mocker.Mock(email="user@example.com", user_id="user123")
+        mocker.patch('app.routes.auth.authenticate_user', return_value=mock_user)
+    else:
+        mocker.patch('app.routes.auth.authenticate_user', side_effect=HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid token."))
+    # Define a sample token payload and send post request
+    token_data = {
+        "token": "valid_or_invalid_token_based_on_param"}
+    response = client.post("/auth/token", json=token_data)
+    # Assertions
+    if token_valid:
+        assert response.status_code == expected_status
+        assert response.json() == expected_response
 
-@pytest.mark.asyncio
-async def test_delete_user_success(client, db_dependency, current_user_dependency_factory):
-    email = "user_delete@example.com"
-    user = CurrentUserSchema(email=email, user_id=3)
-    current_user_dependency_factory(user)
+
+def test_delete_user_success(current_user_dependency_factory, mocker):
+    # Mock get_current_user to return an authenticated user
+    mock_user = CurrentUserSchema(email="user@example.com", user_id="user123")
+    current_user_dependency_factory(mock_user)
+    # Mock delete_and_commit_user function
+    mocker.patch("app.routes.auth.delete_and_commit_user", return_value={
+                 "message": "User deleted successfully"})
     response = client.delete("/auth/delete_user")
-    assert response.status_code == 200   
+    assert response.status_code == HTTPStatus.OK
     assert response.json() == {"message": "User deleted successfully"}
-    # Check that the user was deleted
-    user = db_dependency.query(UserModel).filter_by(email=email).first()
-    assert user is None
+
+
+def test_delete_user_unauthorized(current_user_dependency_factory, mocker):
+    # Mock get_current_user to raise HTTPException for unauthorized access
+    current_user_dependency_factory(None)
+    response = client.delete("/auth/delete_user")
+    assert response.status_code == HTTPStatus.UNAUTHORIZED
+    assert response.json() == {"detail": "Unauthorized"}
 

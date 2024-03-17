@@ -9,12 +9,11 @@ class CreateUserRequestSchema(BaseModel):
 
 
 class TokenSchema(BaseModel):
-    access_token: str
-    token_type: str
+    token: str
 
 
 class CurrentUserSchema(BaseModel):
     email: str
-    user_id: int
+    user_id: str
 
 # remember to add new schemas to __all__ in app/schemas/__init__.py

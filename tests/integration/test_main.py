@@ -5,15 +5,14 @@ from app.main import app
 client = TestClient(app)
 
 
-def test_user_endpoint_unauthorized():
-    response = client.get("/user")
-    assert response.status_code == 401
-
-
-def test_user_endpoint_authorized(client, current_user_dependency):
-    """Test the /user endpoint with authorization mocked.
-    This uses the override_get_current_user fixture to simulate an authenticated user.
-    """
-    response = client.get("/user")
+def test_root():
+    response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"User": {"email": "user1@example.com", "user_id": 1}}
+    assert response.json() == {"message": "Hello World"}
+
+
+def test_health_check_auth():
+    response = client.get("/health/auth")
+    assert response.status_code == 403
+    assert response.json() == {"detail": "Not authenticated"}
+
