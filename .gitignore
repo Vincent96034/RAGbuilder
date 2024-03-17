@@ -166,3 +166,4 @@ notes.txt
 *.sqlite3
 *.db
 dev.ipynb
+credentials/
