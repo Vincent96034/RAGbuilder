@@ -1,5 +1,6 @@
 import logging.config
 import os
+import json
 
 from dotenv import load_dotenv
 import firebase_admin
@@ -32,7 +33,12 @@ app.include_router(auth_router)
 
 
 if not firebase_admin._apps:
-    cred = credentials.Certificate(os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_PATH")) or None
+    firebase_service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+    if firebase_service_account_json:
+        cred_dict = json.loads(firebase_service_account_json)
+        cred = credentials.Certificate(cred_dict)
+    else:
+        cred = None
     default_app = firebase_admin.initialize_app(cred)
 
 
