@@ -1,10 +1,15 @@
 from dataclasses import dataclass
+from abc import ABC
 
 from firebase_admin._user_mgt import UserRecord
 
 
+class BaseModel:
+    def to_dict(self):
+        return self.__dict__
+
 @dataclass
-class UserModel:
+class UserModel(BaseModel):
     user_id: str
     email: str
     email_verified: bool
@@ -23,21 +28,28 @@ class UserModel:
         )
 
 
-# class ProjectModel(Base):
-#     __tablename__ = 'projects'
+@dataclass
+class ProjectModel(BaseModel):
+    project_id: str
+    title: str
+    description: str
+    rag_type_id: str
+    created_at: str
+    user_id: str
 
-#     project_id = Column(Integer, primary_key=True)
-#     user_id = Column(Integer, ForeignKey('users.user_id'))
-#     rag_type_id = Column(Integer, ForeignKey('rag_type.rag_type_id'))
-#     title = Column(String)
-#     description = Column(Text)
-#     created_at = Column(DateTime)
+    def from_firebase(project: dict):
+        raise NotImplementedError
 
-#     # Relationships
-#     rs_documents = relationship("DocumentModel", back_populates="rs_project")
-#     rs_gpt_schemas = relationship("GptSchemaModel", back_populates="rs_project")
-#     rs_owner = relationship("UserModel", back_populates="rs_projects")
-#     rs_rag_type = relationship("RagTypeModel", back_populates="rs_projects")
+
+@dataclass
+class RagTypeModel(BaseModel):
+    rag_type_id: str
+    title: str
+    config: dict
+
+    def from_firebase(rag_type: dict):
+        raise NotImplementedError
+
 
 
 # class DocumentModel(Base):
@@ -79,16 +91,6 @@ class UserModel:
 #     # Relationships
 #     rs_project = relationship("ProjectModel", back_populates="rs_gpt_schemas")
 
-
-# class RagTypeModel(Base):
-#     __tablename__ = 'rag_type'
-
-#     rag_type_id = Column(Integer, primary_key=True)
-#     title = Column(String)
-#     config = Column(Text)  # Assuming a JSON or similar configuration representation.
-    
-#     # Relationships
-#     rs_projects = relationship("ProjectModel", back_populates="rs_rag_type")
 
 
 # class ExtApiUsageModel(Base):

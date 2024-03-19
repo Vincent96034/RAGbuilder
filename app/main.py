@@ -2,8 +2,8 @@ import logging.config
 import os
 import json
 
-from dotenv import load_dotenv
 import firebase_admin
+from dotenv import load_dotenv
 from firebase_admin import credentials
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -166,4 +166,5 @@ notes.txt
 *.sqlite3
 *.db
 dev.ipynb
+dev.py
 credentials/
