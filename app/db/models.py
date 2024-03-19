@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from abc import ABC
 
 from firebase_admin._user_mgt import UserRecord
+from google.cloud.firestore_v1.document import DocumentReference
+
 
 
 class BaseModel:
@@ -17,6 +18,7 @@ class UserModel(BaseModel):
     display_name: str
     created_at: str
 
+    @staticmethod
     def from_firebase(user: UserRecord):
         return UserModel(
             user_id=user.uid,
@@ -35,10 +37,14 @@ class ProjectModel(BaseModel):
     description: str
     rag_type_id: str
     created_at: str
+    updated_at: str
     user_id: str
 
-    def from_firebase(project: dict):
-        raise NotImplementedError
+    @staticmethod
+    def from_firebase(project: DocumentReference):
+        doc_data = project.to_dict()
+        doc_data["project_id"] = project.id 
+        return ProjectModel(**doc_data)
 
 
 @dataclass

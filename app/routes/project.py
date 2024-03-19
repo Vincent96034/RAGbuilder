@@ -28,7 +28,9 @@ async def read_project_from_user(
     db=Depends(get_db)
 ) -> ProjectModel:
     """Get a single project by its ID."""
-    return get_project(project_id, current_user, db)
+    # check if the user is the owner of the project
+    # todo
+    return get_project(project_id, db)
 
 
 @router.set("/projects/{project_id}", response_model=ProjectModel)
