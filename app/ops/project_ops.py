@@ -1,5 +1,8 @@
 from fastapi import status
 from firebase_admin import firestore
+from google.cloud.firestore_v1 import FieldFilter
+
+from fastapi.exceptions import HTTPException
 
 from app.db.models import ProjectModel
 from app.schemas import CreateProjectSchema, UpdateProjectSchema
@@ -9,12 +12,9 @@ from app.utils import logger
 def get_project(project_id: str, db: firestore.client) -> ProjectModel:
     doc_ref = db.collection("projects").document(project_id)
     doc = doc_ref.get()
-    if doc.exists:
-        data = doc.to_dict()
-    else:
-        print("No such document!")
-    print(data)
-    return ProjectModel.from_firebase(data)
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return ProjectModel.from_firebase(doc.to_dict())
 
 
 def set_project(project: UpdateProjectSchema, db: firestore.client) -> ProjectModel:
@@ -26,8 +26,11 @@ def set_project(project: UpdateProjectSchema, db: firestore.client) -> ProjectMo
 
 
 def get_projects_for_user(user_id: str, db: firestore.client) -> list[ProjectModel]:
-    # todo
-    return ""
+    projects = (
+        db.collection("projects")
+        .where(filter=FieldFilter("user_id", "==", user_id))
+        .stream())
+    return [ProjectModel.from_firebase(project) for project in projects]
 
 
 def create_project(
@@ -63,3 +66,12 @@ def delete_project(
         project_id: str, user_id: str, db: firestore.client) -> status.HTTP_200_OK:
     db.collection("projects").document(project_id).delete()
     return status.HTTP_200_OK
+
+
+def check_user_project_access(project_id: str, user_id: str, db: firestore.client) -> bool:
+    doc_ref = db.collection("projects").document(project_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Project not found")
+    project = ProjectModel.from_firebase(doc.to_dict())
+    return project.user_id == user_id

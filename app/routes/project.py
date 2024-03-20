@@ -1,16 +1,16 @@
 import logging
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends
-from fastapi import status
+from fastapi import APIRouter, Depends, status
+from fastapi.exceptions import HTTPException
 
 from app.ops.user_ops import get_current_user
 from app.schemas import CurrentUserSchema, CreateProjectSchema
 from app.db.models import ProjectModel
 from app.db.database import get_db
 
-from app.ops.project_ops import (
-    get_project, update_project, get_projects_for_user, create_project, delete_project)
+from app.ops.project_ops import (get_project, update_project, get_projects_for_user,
+                                 create_project, delete_project, check_user_project_access)
 
 
 logger = logging.getLogger(__name__)
@@ -40,8 +40,9 @@ async def update_project_from_user(
     db=Depends(get_db)
 ) -> ProjectModel:
     """Update a single project by its ID."""
-    # check if the user is the owner of the project
-    # todo
+    if not check_user_project_access(project_id, current_user.user_id, db):
+        raise HTTPException(
+            status_code=403, detail="User does not have access to the project")
     return update_project(project_id, current_user.user_id, db)
 
 
@@ -71,6 +72,7 @@ async def delete_project_for_user(
     db=Depends(get_db)
 ) -> status.HTTP_200_OK:
     """Delete a project by its ID."""
-    # check if the user is the owner of the project
-    # todo
+    if not check_user_project_access(project_id, current_user.user_id, db):
+        raise HTTPException(
+            status_code=403, detail="User does not have access to the project")
     return delete_project(project_id, current_user.user_id, db)
