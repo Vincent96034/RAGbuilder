@@ -1,11 +1,11 @@
 import logging
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from fastapi.exceptions import HTTPException
 
 from app.ops.user_ops import get_current_user
-from app.schemas import CurrentUserSchema, CreateProjectSchema
+from app.schemas import CurrentUserSchema, CreateProjectSchema, UpdateProjectSchema
 from app.db.models import ProjectModel
 from app.db.database import get_db
 
@@ -29,21 +29,23 @@ async def read_project_from_user(
 ) -> ProjectModel:
     """Get a single project by its ID."""
     # check if the user is the owner of the project
-    # todo
+    if not check_user_project_access(project_id, current_user.user_id, db):
+        raise HTTPException(
+            status_code=403, detail="User does not have access to the project")
     return get_project(project_id, db)
 
 
-@router.set("/projects/{project_id}", response_model=ProjectModel)
+@router.patch("/projects/{project_id}", response_model=ProjectModel)
 async def update_project_from_user(
-    project_id: str,
+    project: UpdateProjectSchema,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
     db=Depends(get_db)
 ) -> ProjectModel:
     """Update a single project by its ID."""
-    if not check_user_project_access(project_id, current_user.user_id, db):
+    if not check_user_project_access(project.project_id, current_user.user_id, db):
         raise HTTPException(
             status_code=403, detail="User does not have access to the project")
-    return update_project(project_id, current_user.user_id, db)
+    return update_project(project, db)
 
 
 @router.get("/projects", response_model=List[ProjectModel])
@@ -65,12 +67,12 @@ async def create_project_for_user(
     return create_project(project, current_user.user_id, db)
 
 
-@router.delete("/projects/{project_id}", response_model=status.HTTP_200_OK)
+@router.delete("/projects/{project_id}", response_model=dict)
 async def delete_project_for_user(
     project_id: str,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
     db=Depends(get_db)
-) -> status.HTTP_200_OK:
+) -> dict:
     """Delete a project by its ID."""
     if not check_user_project_access(project_id, current_user.user_id, db):
         raise HTTPException(

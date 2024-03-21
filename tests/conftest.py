@@ -1,6 +1,6 @@
 # conftest.py
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from fastapi.testclient import TestClient
 
@@ -20,6 +20,9 @@ first_name = "John"
 last_name = "Doe"
 password = "securePassword123"
 
+
+##########################################################################################
+# FIREBSE AUTH
 
 @pytest.fixture
 def mock_auth_verify_id_token_success():
@@ -51,6 +54,18 @@ def mock_firebase_user():
         creation_timestamp = "2023-01-01T00:00:00Z"
 
     return MockUserRecord(user_id, email, f"{first_name} {last_name}", False, False)
+
+
+##########################################################################################
+# FIRESTORE
+
+@pytest.fixture
+def mock_firestore_client(mocker):
+    mock_client = mocker.patch('app.ops.project_ops.firestore.client')
+    mock_doc_ref = Mock()
+    mock_client.collection.return_value.document.return_value = mock_doc_ref
+    return mock_client, mock_doc_ref
+
 
 
 

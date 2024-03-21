@@ -53,7 +53,7 @@ async def get_current_user(auth: HTTPAuthorizationCredentials = Security(securit
     """Extracts and validates the user's token, either from the Authorization header or
     cookies, to retrieve the current user."""
     token = auth.credentials
-    logger.debug(f"Token: {token}")
+    #logger.debug(f"Token: {token}")
     return authenticate_user(token)
 
 

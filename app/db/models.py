@@ -35,7 +35,7 @@ class ProjectModel(BaseModel):
     project_id: str
     title: str
     description: str
-    rag_type_id: str
+    model_id: str
     created_at: str
     updated_at: str
     user_id: str
@@ -48,8 +48,8 @@ class ProjectModel(BaseModel):
 
 
 @dataclass
-class RagTypeModel(BaseModel):
-    rag_type_id: str
+class ModelType(BaseModel):
+    model_id: str
     title: str
     config: dict
 

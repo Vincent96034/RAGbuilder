@@ -1,4 +1,3 @@
-from fastapi import status
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import FieldFilter
 
@@ -14,15 +13,22 @@ def get_project(project_id: str, db: firestore.client) -> ProjectModel:
     doc = doc_ref.get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Project not found")
-    return ProjectModel.from_firebase(doc.to_dict())
+    return ProjectModel.from_firebase(doc)
 
 
-def set_project(project: UpdateProjectSchema, db: firestore.client) -> ProjectModel:
+def update_project(project: UpdateProjectSchema, db: firestore.client) -> ProjectModel:
     logger.debug(f"Updating project {project.project_id}")
     project_ref = db.collection("projects").document(project.project_id)
     data = project.model_dump()
+    # remove keys with none values
+    data = {k: v for k, v in data.items() if v is not None}
     data["updated_at"] = firestore.SERVER_TIMESTAMP
-    return project_ref.update(data)
+    project_ref.update(data)
+    updated_doc = project_ref.get() # fetch the data again
+    if updated_doc.exists:
+        return ProjectModel.from_firebase(updated_doc)
+    else:
+        raise Exception("Failed to update the project correctly.")
 
 
 def get_projects_for_user(user_id: str, db: firestore.client) -> list[ProjectModel]:
@@ -63,9 +69,9 @@ def create_project(
 
 
 def delete_project(
-        project_id: str, user_id: str, db: firestore.client) -> status.HTTP_200_OK:
+        project_id: str, user_id: str, db: firestore.client) -> dict:
     db.collection("projects").document(project_id).delete()
-    return status.HTTP_200_OK
+    return {"message": "Project deleted successfully"}
 
 
 def check_user_project_access(project_id: str, user_id: str, db: firestore.client) -> bool:
@@ -73,5 +79,5 @@ def check_user_project_access(project_id: str, user_id: str, db: firestore.clien
     doc = doc_ref.get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Project not found")
-    project = ProjectModel.from_firebase(doc.to_dict())
+    project = ProjectModel.from_firebase(doc)
     return project.user_id == user_id
