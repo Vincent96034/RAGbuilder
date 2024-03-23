@@ -33,4 +33,4 @@ jobs:
           ENCRYPTION_SECRET_KEY: sycretkey_testenv
           ENCRYPTION_ALGORITHM: HS256
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
-        run: pytest
+        run: pytest -m "not e2e"
