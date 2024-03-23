@@ -35,10 +35,11 @@ class ProjectModel(BaseModel):
     project_id: str
     title: str
     description: str
-    model_id: str
+    instance_id: str
     created_at: str
     updated_at: str
     user_id: str
+    files: list
 
     @staticmethod
     def from_firebase(project: DocumentReference):
@@ -48,8 +49,8 @@ class ProjectModel(BaseModel):
 
 
 @dataclass
-class ModelType(BaseModel):
-    model_id: str
+class ModelTypeModel(BaseModel):
+    instance_id: str
     title: str
     config: dict
 
