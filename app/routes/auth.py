@@ -4,10 +4,9 @@ from dotenv import load_dotenv
 
 from fastapi import APIRouter, status, Depends
 from fastapi.exceptions import HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
 
 from app.schemas import CreateUserRequestSchema, TokenSchema, CurrentUserSchema
-from app.ops.user_ops import (get_current_user, authenticate_user, create_access_token,
+from app.ops.user_ops import (get_current_user, authenticate_user,
                               create_and_commit_user, check_user_exists, delete_and_commit_user)
 
 
@@ -63,13 +62,6 @@ async def verify_token(
     user = authenticate_user(token.token)
     logger.debug(f"User authenticated: {user.email}")
     return user
-
-
-@router.post('/create_access_token', response_model=TokenSchema)
-async def create_access_token_route(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    email = form_data.username
-    password = form_data.password
-    return create_access_token(email, password)
 
 
 @router.delete("/delete_user", status_code=status.HTTP_200_OK)

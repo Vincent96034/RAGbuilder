@@ -29,3 +29,10 @@ def health_check_auth(
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)]
 ) -> dict:
     return {"message": "Auth service is healthy"}
+
+
+@router.get("/privacy_policy")
+async def privacy_policy():
+    privacy_policy = """PRIVACY POLICY \n
+    Do not use this service. The developer is not responsible for any damages caused by the use of this service. \n"""
+    return {"message": privacy_policy}

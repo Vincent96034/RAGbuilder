@@ -24,11 +24,11 @@ def _exchange_custom_token_for_id_token(custom_token, firebase_api_key):
 
 
 
-def create_test_token(auth=auth):
+def create_test_token(auth=auth, uid="ZX9tBEeH0EeTiqnmJ2H7YnVTTE82"):
     server_env = os.getenv("SERVER_ENVIRONMENT")
     if server_env != "testing":
         raise Exception("This function should only be used in a testing environment.")
     web_api_key = os.getenv("FIREBASE_WEB_API_KEY")
-    test_token = auth.create_custom_token(uid="ZX9tBEeH0EeTiqnmJ2H7YnVTTE82")
+    test_token = auth.create_custom_token(uid=uid)
     id_token = _exchange_custom_token_for_id_token(test_token.decode('utf-8'), web_api_key)
     return id_token
