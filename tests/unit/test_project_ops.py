@@ -14,7 +14,8 @@ sample_projct = {
     "modeltype_id": "default-rag",
     "created_at": "2023-01-01T00:00",
     "updated_at": "2023-01-01T00:00:00Z",
-    "user_id": "user123"
+    "user_id": "user123",
+    "files": ["file1", "file2"]
 }
 
 sample_projct2 = {
@@ -24,7 +25,8 @@ sample_projct2 = {
     "modeltype_id": "default-rag",
     "created_at": "2023-02-01T00:00",
     "updated_at": "2023-02-02T00:00:00Z",
-    "user_id": "user123"
+    "user_id": "user123",
+    "files": ["file1", "file2"]
 }
 
 sample_projects_data = [sample_projct, sample_projct2]
