@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import patch, MagicMock
 from langchain.schema.document import Document
@@ -11,8 +12,16 @@ class TestDefaultRAG(unittest.TestCase):
     def setUp(self, MockVectorStore):
         # Mock the VectorStore passed during initialization
         self.mock_vectorstore = MockVectorStore()
+        # Initialize Environment Variables
+        os.environ["LANGCHAIN_API_KEY"] = "test_langchain_api_key"
+        os.environ["OPENAI_API_KEY"] = "test_openai_api_key"
         # Initialize DefaultRAG with the mocked VectorStore
         self.model = DefaultRAG(self.mock_vectorstore)
+
+    def tearDown(self):
+        # Remove it to avoid side effects
+        del os.environ["LANGCHAIN_API_KEY"]
+        del os.environ["OPENAI_API_KEY"]
 
     def test_initialization(self):
         # Test if the model is initialized with correct default values
