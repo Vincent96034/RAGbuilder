@@ -18,4 +18,4 @@ class FileHandler:
             raise HTTPException(
                 status_code=400, detail=f"Unsupported file type: must be PDF or TXT, got {extension}")
 
-        return handler(file=file)
+        return handler(file=file, extension=extension)

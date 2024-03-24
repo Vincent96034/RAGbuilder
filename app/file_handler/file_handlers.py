@@ -23,8 +23,9 @@ class AbstractFileHandler(ABC):
         documents = handler.read(file)
     ```
     """
-    def __init__(self, file: UploadFile):
+    def __init__(self, file: UploadFile, extension: str):
         self.file = file
+        self.extension = extension
 
     @abstractmethod
     async def read(self, file: UploadFile) -> List[Document]:
@@ -51,7 +52,7 @@ class PDFHandler(AbstractFileHandler):
     async def read(self) -> List[Document]:
         content = await self.file.read()
         try:
-            async with temporary_file(content, suffix=".pdf", sanitize_fn=sanitize_pdf) as tmp_path:
+            async with temporary_file(content, suffix=self.extension, sanitize_fn=sanitize_pdf) as tmp_path:
                 loader = PyPDFLoader(file_path=tmp_path)
                 documents = loader.load()
         except Exception as e:
@@ -72,7 +73,7 @@ class TXTHandler(AbstractFileHandler):
     async def read(self):
         content = await self.file.read()
         try:
-            async with temporary_file(content, suffix=".pdf", sanitize_fn=sanitize_text) as tmp_path:
+            async with temporary_file(content, suffix=self.extension, sanitize_fn=sanitize_text) as tmp_path:
                 loader = TextLoader(file_path=tmp_path)
                 documents = loader.load()
         except Exception as e:
