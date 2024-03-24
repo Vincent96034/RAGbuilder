@@ -1,3 +1,4 @@
+from typing import Optional
 from dataclasses import dataclass
 
 from firebase_admin._user_mgt import UserRecord
@@ -35,7 +36,7 @@ class ProjectModel(BaseModel):
     project_id: str
     title: str
     description: str
-    instance_id: str
+    modeltype_id: str
     created_at: str
     updated_at: str
     user_id: str
@@ -50,13 +51,32 @@ class ProjectModel(BaseModel):
 
 @dataclass
 class ModelTypeModel(BaseModel):
-    instance_id: str
+    modeltype_id: str
+    description: str
     title: str
     config: dict
 
-    def from_firebase(rag_type: dict):
-        raise NotImplementedError
+    def from_firebase(model_type: DocumentReference):
+        doc_data = model_type.to_dict()
+        doc_data["modeltype_id"] = model_type.id
+        return ModelTypeModel(**doc_data)
 
+
+@dataclass
+class FileModel(BaseModel):
+    file_id: str
+    project_id: str
+    file_name: str
+    file_type: str
+    created_at: str
+    vec_db_src: Optional[str] = None
+    vec_db_key: Optional[str] = None
+    metadata: Optional[dict] = None
+
+    def from_firebase(file: DocumentReference):
+        doc_data = file.to_dict()
+        doc_data["file_id"] = file.id
+        return FileModel(**doc_data)
 
 
 # class DocumentModel(Base):
