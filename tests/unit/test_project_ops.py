@@ -1,17 +1,17 @@
 import pytest
 from fastapi import HTTPException
-from google.cloud import firestore
+#from google.cloud import firestore
 
 from app.db.models import ProjectModel
-from app.ops.project_ops import get_project, update_project
-from app.schemas import UpdateProjectSchema
+from app.ops.project_ops import get_project #, update_project
+#from app.schemas import UpdateProjectSchema
 
 
 sample_projct = {
     "project_id": "test_project_id",
     "title": "Test Project",
     "description": "Test project description",
-    "instance_id": "default-rag",
+    "modeltype_id": "default-rag",
     "created_at": "2023-01-01T00:00",
     "updated_at": "2023-01-01T00:00:00Z",
     "user_id": "user123"
@@ -21,7 +21,7 @@ sample_projct2 = {
     "project_id": "test_project_id2",
     "title": "Test Project2",
     "description": "Test project description2",
-    "instance_id": "default-rag",
+    "modeltype_id": "default-rag",
     "created_at": "2023-02-01T00:00",
     "updated_at": "2023-02-02T00:00:00Z",
     "user_id": "user123"
@@ -64,7 +64,7 @@ def test_update_project(mock_firestore_client, mocker):
     #     "project_id": "test_project_id",
     #     "title": "Updated Project Title",
     #     "description": "Updated project description",
-    #     "instance_id": "default-rag",}
+    #     "modeltype_id": "default-rag",}
     # # Create an instance of UpdateProjectSchema with the test data
     # update_project_schema_instance = UpdateProjectSchema(**project_data)
     

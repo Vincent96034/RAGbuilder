@@ -1,10 +1,11 @@
+from typing import List
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import FieldFilter
-
 from fastapi.exceptions import HTTPException
+from langchain.schema.document import Document
 
-from app.db.models import ProjectModel
-from app.schemas import CreateProjectSchema, UpdateProjectSchema
+from app.db.models import ProjectModel, ModelTypeModel, FileModel
+from app.schemas import CreateProjectSchema, UpdateProjectSchema, CreateFileSchema
 from app.utils import logger
 
 
@@ -74,10 +75,86 @@ def delete_project(
     return {"message": "Project deleted successfully"}
 
 
-def check_user_project_access(project_id: str, user_id: str, db: firestore.client) -> bool:
+def check_user_project_access(
+        project_id: str,
+        user_id: str,
+        db: firestore.client,
+        return_obj=False
+) -> bool | ProjectModel | None:
+    """Check if the user has access to the project. If return_obj is True, returns the
+    project object if user has access to it.
+    """
+    # todo: refactor
     doc_ref = db.collection("projects").document(project_id)
     doc = doc_ref.get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Project not found")
     project = ProjectModel.from_firebase(doc)
-    return project.user_id == user_id
+    check = project.user_id == user_id
+    if return_obj:
+        return project if check else None
+    return check
+
+
+def get_model_types(db: firestore.client) -> list[ModelTypeModel]:
+    model_types = db.collection("model_types").stream()
+    return [ModelTypeModel.from_firebase(model_type) for model_type in model_types]
+
+
+def get_model_type(model_type_id: str, db: firestore.client) -> ModelTypeModel:
+    doc_ref = db.collection("models").document(model_type_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Model type not found")
+    return ModelTypeModel.from_firebase(doc)
+
+
+def create_file(
+    file: CreateFileSchema,
+    project_id: str,
+    db: firestore.client
+) -> FileModel:
+    """Create a new file in the database.
+    
+    Args:
+        - file (CreateFileSchema): The file to create.
+        - project_id (str): The project ID of the project the file belongs to.
+        - db (firestore.client): The Firestore client.
+    
+    Returns:
+        FileModel: The created file.
+    """
+    logger.debug(f"Creating file {file.file_name}")
+    data = file.model_dump()
+    data["project_id"] = project_id
+    data["created_at"] = firestore.SERVER_TIMESTAMP
+    doc_ref = db.collection("files").document()
+    doc_ref.set(data)
+    created_doc = doc_ref.get()
+    if created_doc.exists:
+        return FileModel.from_firebase(created_doc)
+    else:
+        raise Exception("Failed to create the file correctly.")
+
+
+def process_and_upload_document(
+        user_id: str,
+        file: FileModel,
+        documents: List[Document],
+        project: ProjectModel,
+        model: ModelTypeModel,
+        db: firestore.client
+) -> None:
+    logger.info("Background task: Processing and uploading document ...")
+
+    # process document
+
+    # upload to vector db
+
+    # update FileModel entry: add vec_db_src, vec_db_key
+
+    # update ProjectModel entry: add file
+
+
+
+
