@@ -1,14 +1,12 @@
 import logging
-from typing import Optional
 from dotenv import load_dotenv
 
 from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.requests import Request
 from fastapi import HTTPException, status, Security
 from firebase_admin import auth
 
 from app.db.models import UserModel
-from app.schemas import CurrentUserSchema, TokenSchema
+from app.schemas import CurrentUserSchema
 from app.ops.exceptions import raise_unauthorized_exception
 
 
@@ -38,22 +36,11 @@ def authenticate_user(token: str) -> CurrentUserSchema:
         raise_unauthorized_exception("Invalid token.")
 
 
-#? This function is not used in the codebase
-async def get_token_from_request(request: Request) -> Optional[str]:
-    """Attempt to extract the token from the Authorization header; if not found, check
-    cookies."""
-    token = request.cookies.get("access_token", None)
-    if token is None:
-        logger.debug("Token not found in cookies")
-        token: str = await oauth2_bearer(request)
-    return token
-
-
 async def get_current_user(auth: HTTPAuthorizationCredentials = Security(security)):
     """Extracts and validates the user's token, either from the Authorization header or
     cookies, to retrieve the current user."""
     token = auth.credentials
-    logger.debug(f"Token: {token}")
+    #logger.debug(f"Token: {token}")
     return authenticate_user(token)
 
 
@@ -100,24 +87,6 @@ def check_user_exists(email: str) -> bool:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid Email or Password format: {e}")
-    
-
-def create_access_token(email: str, password: str) -> TokenSchema:
-    """Create an access token for a user.
-
-    Args:
-        email (str): The user's email.
-        password (str): The user's password.
-
-    Returns:
-        dict: A dictionary containing the access token and token type.
-    """
-    # ! deprecated
-    user = auth.sign_in_with_email_and_password(
-        email = email,
-        password = password
-    )
-    return TokenSchema(token=user['idToken'])
 
 
 def delete_and_commit_user(email: str) -> dict:
