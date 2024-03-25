@@ -1,9 +1,11 @@
 from typing import TypeVar, Type, Optional
 from pydantic import BaseModel
+from app.db.models import ProjectModel
 
 
 # Create a type variable for the model class
 T = TypeVar('T')
+
 
 class BaseSchema(BaseModel):
     """Base schema class that provides a method to create a schema from a model."""
@@ -49,6 +51,16 @@ class ProjectSchema(BaseSchema):
     modeltype_id: str
     created_at: str
 
+    @staticmethod
+    def from_model(project: ProjectModel):
+        datetime_str = project.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        return ProjectSchema(
+            project_id=project.project_id,
+            title=project.title,
+            description=project.description,
+            modeltype_id=project.modeltype_id,
+            created_at=datetime_str)
+
 
 class ModelTypeSchema(BaseSchema):
     modeltype_id: str
@@ -65,5 +77,10 @@ class CreateFileSchema(BaseSchema):
     vec_db_key: Optional[str] = None
     metadata: Optional[dict] = None
 
-    
+
+class InvokeResultSchema(BaseSchema):
+    page_content: str
+    metadata: dict
+
+
 # remember to add new schemas to __all__ in app/schemas/__init__.py

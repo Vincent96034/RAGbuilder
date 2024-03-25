@@ -1,3 +1,3 @@
-from .defaultrag import DefaultRAG
+from .defaultrag import DefaultRAG, AbstractModel
 
-__all__ = ["DefaultRAG"]
+__all__ = ["DefaultRAG", "AbstractModel"]
