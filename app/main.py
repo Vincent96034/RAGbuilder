@@ -23,14 +23,23 @@ logging.config.fileConfig("app/config/logging.conf", disable_existing_loggers=Fa
 logger = logging.getLogger(__name__)
 
 if not firebase_admin._apps:
-    firebase_service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_PATH")
-    if not firebase_service_account_json:
-        logger.warning("No Firebase service account JSON provided.")
-        cred = credentials.ApplicationDefault()
-    else:
-        with open(firebase_service_account_json, 'r') as file:
+
+    fb_service_acc_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_PATH")
+    fb_service_acc_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+
+    if fb_service_acc_json:
+        cred_dict = json.loads(fb_service_acc_json)
+        cred = credentials.Certificate(cred_dict)
+        logger.info("Firebase credentials loaded from json.")
+    elif fb_service_acc_path:
+        with open(fb_service_acc_path, 'r') as file:
             cred_dict = json.load(file)
             cred = credentials.Certificate(cred_dict)
+        logger.info("Firebase credentials loaded from path.")
+    else:
+        cred = credentials.ApplicationDefault()
+        logger.warning("No Firebase service account provided. Using App Default ...")
+
     default_app = firebase_admin.initialize_app(cred)
 logger.info("Firebase app initialized: %s", default_app.name)
 
