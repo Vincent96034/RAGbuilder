@@ -15,10 +15,9 @@ logger = logging.getLogger(__name__)
 
 # Create the API router for the auth endpoints
 router = APIRouter(
-    prefix="/auth",
+    prefix="/v1/auth",
     tags=["auth"],
     responses={404: {"description": "Not found"}})
-
 
 
 @router.post("/create_user", status_code=status.HTTP_201_CREATED)

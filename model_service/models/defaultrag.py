@@ -94,7 +94,7 @@ class DefaultRAG(AbstractModel):
         chunks = splitter.split_documents(documents=documents)
         chunks = simple_doc_cleaner(chunks)
         if metadata is not None:
-            chunks = [chunk.metadata.update(metadata) for chunk in chunks]
+            [chunk.metadata.update(metadata) for chunk in chunks]
         logger.debug(
             f"Indexing {len(documents)} documents ({len(chunks)} chunks). Now upserting ...")
         self.vectorstore.add_documents(chunks, namespace=namespace)

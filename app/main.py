@@ -12,6 +12,8 @@ from app.routes.auth import router as auth_router
 from app.routes.root import router as root_router
 from app.routes.project import router as project_router
 from app.routes.model import router as model_router
+from app.routes.api import router as api_router
+
 from app.utils.testing import create_test_token
 from contextlib import asynccontextmanager
 
@@ -50,6 +52,7 @@ app.include_router(root_router)
 app.include_router(auth_router)
 app.include_router(project_router)
 app.include_router(model_router)
+app.include_router(api_router)
 
 
 origins = [

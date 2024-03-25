@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Create the API router for the auth endpoints
 router = APIRouter(
-    prefix="/projects",
+    prefix="/v1/projects",
     tags=["project"],
     responses={404: {"description": "Not found"}})
 
@@ -163,12 +163,3 @@ async def create_upload_files(
         background_tasks.add_task(process_and_upload_document, **background_task_kwargs)
     
     return {"message": f"{len(files)} files uploaded successfully. Processing..."}
-
-
-# class CreateFileSchema(BaseSchema):
-#     project_id: str
-#     file_name: str
-#     file_type: str
-#     vec_db_src: Optional[str] = None
-#     vec_db_key: Optional[str] = None
-#     metadata: Optional[dict] = None

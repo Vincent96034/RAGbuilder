@@ -1,5 +1,6 @@
 from typing import List
 from firebase_admin import firestore
+from google.cloud.firestore import ArrayUnion
 from google.cloud.firestore_v1 import FieldFilter
 from fastapi.exceptions import HTTPException
 from langchain.schema.document import Document
@@ -7,6 +8,7 @@ from langchain.schema.document import Document
 from app.db.models import ProjectModel, ModelTypeModel, FileModel
 from app.schemas import CreateProjectSchema, UpdateProjectSchema, CreateFileSchema
 from app.utils import logger
+from app.ops.model_factory import model_factory
 
 
 def get_project(project_id: str, db: firestore.client) -> ProjectModel:
@@ -25,7 +27,7 @@ def update_project(project: UpdateProjectSchema, db: firestore.client) -> Projec
     data = {k: v for k, v in data.items() if v is not None}
     data["updated_at"] = firestore.SERVER_TIMESTAMP
     project_ref.update(data)
-    updated_doc = project_ref.get() # fetch the data again
+    updated_doc = project_ref.get()  # fetch the data again
     if updated_doc.exists:
         return ProjectModel.from_firebase(updated_doc)
     else:
@@ -46,12 +48,12 @@ def create_project(
     db: firestore.client
 ) -> ProjectModel:
     """Create a new project in the database.
-    
+
     Args:
         - project (CreateProjectSchema): The project to create.
         - user_id (str): The user ID of the user creating the project.
         - db (firestore.client): The Firestore client.
-    
+
     Returns:
         ProjectModel: The created project.
     """
@@ -61,8 +63,8 @@ def create_project(
     data["created_at"] = firestore.SERVER_TIMESTAMP
     data["updated_at"] = firestore.SERVER_TIMESTAMP
     doc_ref = db.collection("projects").document()
-    doc_ref.set(data) # add data to collection
-    created_doc = doc_ref.get() # fetch the data again
+    doc_ref.set(data)  # add data to collection
+    created_doc = doc_ref.get()  # fetch the data again
     if created_doc.exists:
         return ProjectModel.from_firebase(created_doc)
     else:
@@ -97,7 +99,7 @@ def check_user_project_access(
 
 
 def get_model_types(db: firestore.client) -> list[ModelTypeModel]:
-    model_types = db.collection("model_types").stream()
+    model_types = db.collection("models").stream()
     return [ModelTypeModel.from_firebase(model_type) for model_type in model_types]
 
 
@@ -115,12 +117,12 @@ def create_file(
     db: firestore.client
 ) -> FileModel:
     """Create a new file in the database.
-    
+
     Args:
         - file (CreateFileSchema): The file to create.
         - project_id (str): The project ID of the project the file belongs to.
         - db (firestore.client): The Firestore client.
-    
+
     Returns:
         FileModel: The created file.
     """
@@ -145,16 +147,17 @@ def process_and_upload_document(
         model: ModelTypeModel,
         db: firestore.client
 ) -> None:
-    logger.info("Background task: Processing and uploading document ...")
-
-    # process document
-
-    # upload to vector db
-
-    # update FileModel entry: add vec_db_src, vec_db_key
-
+    logger.debug(f"Background task: Processing and uploading file `{file.file_id}` ...")
+    # create model instance and index documents
+    model_instance = model_factory(model.modeltype_id, model.config)
+    logger.debug(
+        f"Model instance `{model_instance}` created for project `{project.project_id}`")
+    logger.debug(f"Documents: {documents}")
+    model_instance.index(
+        documents=documents,
+        namespace=user_id,
+        metadata={"project_id": project.project_id, "file_id": file.file_id})
     # update ProjectModel entry: add file
-
-
-
-
+    project_ref = db.collection('projects').document(project.project_id)
+    project_ref.update({'files': ArrayUnion([file.file_id])})
+    logger.debug(f"File `{file.file_id}` processed and uploaded successfully.")

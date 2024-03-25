@@ -40,7 +40,7 @@ class ProjectModel(BaseModel):
     created_at: str
     updated_at: str
     user_id: str
-    files: list
+    files: Optional[list] = None
 
     @staticmethod
     def from_firebase(project: DocumentReference):

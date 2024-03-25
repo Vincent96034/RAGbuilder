@@ -9,8 +9,9 @@ from langchain.schema.document import Document
 class AbstractModel(ABC):
     instance_id = None
 
-    def __init__(self, ):
+    def __init__(self, vectorstore=None, **kwargs):
         self._check_environment()
+        self.vectorstore = vectorstore
 
     @abstractmethod
     def index(self, documents: List[Document], **kwargs):
@@ -18,7 +19,7 @@ class AbstractModel(ABC):
         ...
 
     @abstractmethod
-    def invoke(self, input_data, **kwargs):
+    def invoke(self, input_data, **kwargs) -> List[Document]:
         """Invoke the model with input data. This method should define Runnable and return
         self._invoke(chain, input_data) to run the chain."""
         ...
@@ -38,3 +39,6 @@ class AbstractModel(ABC):
             raise Exception("LANGCHAIN_API_KEY is not set")
         if os.getenv("OPENAI_API_KEY") is None:
             raise Exception("OPENAI_API_KEY is not set")
+        
+    def __repr__(self):
+        return f"<{self.__class__.__name__} instance_id={self.instance_id}>"

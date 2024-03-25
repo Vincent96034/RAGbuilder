@@ -32,7 +32,7 @@ def test_e2e_auth():
         password=random_string(20))
 
     # Test creating a user
-    response = client.post("/auth/create_user", json=new_user.__dict__)
+    response = client.post("/v1/auth/create_user", json=new_user.__dict__)
     uid = response.json()['uid']
     assert response.status_code == 201
     assert response.json()['message'] == "User created successfully"
@@ -48,23 +48,23 @@ def test_e2e_auth():
         assert fb_user.uid == uid
 
         # try creating the same user again
-        response = client.post("/auth/create_user", json=new_user.__dict__)
+        response = client.post("/v1/auth/create_user", json=new_user.__dict__)
         assert response.status_code == 400
         assert response.json()['detail'] == "User already exists"
 
         # test token validation
         token = create_test_token(uid=uid)
-        response = client.post("/auth/token", json={"token": token})
+        response = client.post("/v1/auth/token", json={"token": token})
         assert response.status_code == 200
         assert response.json()['email'] == new_user.email
         assert response.json()['user_id'] == uid
 
         # test invalid token
-        response = client.post("/auth/token", json={"token": "invalid_token"})
+        response = client.post("/v1/auth/token", json={"token": "invalid_token"})
         assert response.status_code == 401
 
         response = client.delete(
-            "/auth/delete_user",
+            "/v1/auth/delete_user",
             headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 200
         assert response.json()['message'] == "User deleted successfully"
