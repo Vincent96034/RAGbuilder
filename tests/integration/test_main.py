@@ -6,13 +6,13 @@ client = TestClient(app)
 
 
 def test_root():
-    response = client.get("/")
+    response = client.get("/v1")
     assert response.status_code == 200
     assert response.json() == {"message": "Hello World"}
 
 
 def test_health_check_auth():
-    response = client.get("/health/auth")
+    response = client.get("/v1/health/auth")
     assert response.status_code == 403
     assert response.json() == {"detail": "Not authenticated"}
 

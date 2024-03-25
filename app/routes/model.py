@@ -12,7 +12,7 @@ from app.ops.project_ops import get_model_types, get_model_type
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/models",
+    prefix="/v1/models",
     tags=["models"],
     responses={404: {"description": "Not found"}})
 

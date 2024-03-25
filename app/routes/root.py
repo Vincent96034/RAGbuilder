@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Create the API router for the auth endpoints
 router = APIRouter(
+    prefix="/v1",
     tags=["root"],
     responses={404: {"description": "Not found"}})
 
