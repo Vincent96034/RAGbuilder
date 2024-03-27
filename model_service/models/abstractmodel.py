@@ -1,5 +1,5 @@
 import os
-from typing import List, Any
+from typing import List, Any, Optional
 from abc import ABC, abstractmethod
 
 from langchain_core.runnables import Runnable
@@ -17,6 +17,27 @@ class AbstractModel(ABC):
     def index(self, documents: List[Document], **kwargs):
         """Define indexing for the model."""
         ...
+
+    def deindex(self,
+                ids: Optional[List[str]] = None,
+                delete_all: Optional[bool] = None,
+                namespace: Optional[str] = None,
+                filter: Optional[dict] = None
+                ) -> None:
+        """Define deindexing for the model. This is the default implementation, that
+        deletes by vector IDs or filter.
+
+        Parameters:
+            - ids (List[str, optional]): List of ids to delete.
+            - filter: Dictionary of conditions to filter vectors to delete.
+            - delete_all (bool, optional): If True, delete all vectors in the namespace.
+            - namespace (str, optional): The namespace to delete from.
+        
+        Returns:
+            None
+        """
+        self.vectorstore.delete(ids, delete_all=delete_all,
+                                filter=filter, namespace=namespace)
 
     @abstractmethod
     def invoke(self, input_data, **kwargs) -> List[Document]:
