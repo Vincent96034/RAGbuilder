@@ -2,6 +2,7 @@ from typing import List
 from firebase_admin import firestore
 from google.cloud.firestore import ArrayUnion
 from google.cloud.firestore_v1 import FieldFilter
+from google.cloud.firestore_v1.field_path import FieldPath
 from fastapi.exceptions import HTTPException
 from langchain.schema.document import Document
 
@@ -81,21 +82,21 @@ def check_user_project_access(
         project_id: str,
         user_id: str,
         db: firestore.client,
-        return_obj=False
-) -> bool | ProjectModel | None:
-    """Check if the user has access to the project. If return_obj is True, returns the
-    project object if user has access to it.
+        detail_message: str = "User does not have access to the project."
+) -> ProjectModel:
+    """Check if the user has access to the project. Returns the project if the user has
+    access, otherwise raises an HTTPException.
     """
-    # todo: refactor
     doc_ref = db.collection("projects").document(project_id)
     doc = doc_ref.get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Project not found")
     project = ProjectModel.from_firebase(doc)
     check = project.user_id == user_id
-    if return_obj:
-        return project if check else None
-    return check
+    if not check:
+        raise HTTPException(
+            status_code=403, detail=detail_message)
+    return project
 
 
 def get_model_types(db: firestore.client) -> list[ModelTypeModel]:
@@ -139,6 +140,57 @@ def create_file(
         raise Exception("Failed to create the file correctly.")
 
 
+def get_file(file_id: str, db: firestore.client) -> FileModel:
+    """Get a file by its ID. Raises an HTTPException if the file is not found.
+
+    Args:
+        - file_id (str): The ID of the file.
+        - db (firestore.client): The Firestore client.
+
+    Returns:
+        FileModel: The file.
+    """
+    doc_ref = db.collection("files").document(file_id)
+    doc = doc_ref.get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileModel.from_firebase(doc)
+
+
+def get_multiple_files(file_ids: List[str], db: firestore.client) -> List[FileModel]:
+    """Get multiple files by their IDs. Raises an HTTPException if any of the files are
+    not found.
+
+    Args:
+        - file_ids (List[str]): The IDs of the files.
+        - db (firestore.client): The Firestore client.
+
+    Returns:
+        List[FileModel]: The files.
+    """
+    if not file_ids:
+        return []
+    files, missing_ids = [], []
+    batch_size = 10  # Firestore has a limit of 10 in 'in' operator
+
+    for i in range(0, len(file_ids), batch_size):
+        batch_ids = file_ids[i:i+batch_size]
+        docs = db.collection("files").where(FieldPath.document_id(), "in", batch_ids).stream()
+
+        found_ids = set()
+        for doc in docs:
+            files.append(FileModel.from_firebase(doc))
+            found_ids.add(doc.id)
+
+        # Check for missing documents in this batch
+        missing_ids.extend([file_id for file_id in batch_ids if file_id not in found_ids])
+
+    if missing_ids:
+        raise HTTPException(
+            status_code=404, detail=f"{len(missing_ids)} Files not found: {', '.join(missing_ids)}")
+    return files
+
+
 def process_and_upload_document(
         user_id: str,
         file: FileModel,
@@ -152,7 +204,6 @@ def process_and_upload_document(
     model_instance = model_factory(model.modeltype_id, model.config)
     logger.debug(
         f"Model instance `{model_instance}` created for project `{project.project_id}`")
-    logger.debug(f"Documents: {documents}")
     model_instance.index(
         documents=documents,
         namespace=user_id,
@@ -161,3 +212,24 @@ def process_and_upload_document(
     project_ref = db.collection('projects').document(project.project_id)
     project_ref.update({'files': ArrayUnion([file.file_id])})
     logger.debug(f"File `{file.file_id}` processed and uploaded successfully.")
+
+
+def deindex_and_delete_files(
+        user_id: str,
+        file_id: FileModel,
+        project: ProjectModel,
+        model: ModelTypeModel,
+        db: firestore.client
+) -> None:
+    logger.debug(f"Background task: Deindexing and deleting file `{file_id}` ...")
+    # create model instance and deindex documents
+    model_instance = model_factory(model.modeltype_id, model.config)
+    logger.debug(
+        f"Model instance `{model_instance}` created for project `{project.project_id}`")
+    model_instance.deindex(filter={"file_id": file_id}, namespace=user_id)
+    # update ProjectModel entry: remove file
+    project_ref = db.collection('projects').document(project.project_id)
+    project_ref.update({'files': firestore.ArrayRemove([file_id])})
+    # delete file
+    db.collection('files').document(file_id).delete()
+    logger.debug(f"File `{file_id}` deindexed and deleted successfully.")

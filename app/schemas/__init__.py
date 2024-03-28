@@ -2,7 +2,8 @@
 # import all schemas
 from .schemas import (CreateUserRequestSchema, TokenSchema, CurrentUserSchema,
                       CreateProjectSchema, UpdateProjectSchema, ProjectSchema,
-                      ModelTypeSchema, CreateFileSchema, InvokeResultSchema)
+                      ModelTypeSchema, CreateFileSchema,FileSchema, InvokeResultSchema,
+                      DeleteFileSchema, FileMetadataSchema)
 
 __all__ = [
     "CreateUserRequestSchema",
@@ -13,5 +14,8 @@ __all__ = [
     "ProjectSchema",
     "ModelTypeSchema",
     "CreateFileSchema",
-    "InvokeResultSchema"
+    "FileSchema",
+    "InvokeResultSchema", 
+    "DeleteFileSchema",
+    "FileMetadataSchema"
 ]

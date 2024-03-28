@@ -1,8 +1,8 @@
 import os
 
 from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import PineconeVectorStore
 
+from model_service.vectorstores import PineconeVectorStoreWrapper
 from model_service.models import AbstractModel, DefaultRAG
 
 
@@ -11,7 +11,7 @@ def get_vectorstore():
     if not index_name:
         raise ValueError("PINECONE_INDEX_NAME is not set")
     
-    vs = PineconeVectorStore(index_name=index_name, embedding=OpenAIEmbeddings())
+    vs = PineconeVectorStoreWrapper(index_name=index_name, embedding=OpenAIEmbeddings())
     return vs
 
 

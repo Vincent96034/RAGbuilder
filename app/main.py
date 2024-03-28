@@ -1,10 +1,8 @@
-import logging.config
 import os
-import json
+import logging.config
 
 import firebase_admin
 from dotenv import load_dotenv
-from firebase_admin import credentials
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,7 +12,7 @@ from app.routes.project import router as project_router
 from app.routes.model import router as model_router
 from app.routes.api import router as api_router
 
-from app.utils.testing import create_test_token
+from app.utils.helpers import create_test_token, get_fb_cred
 from contextlib import asynccontextmanager
 
 
@@ -22,24 +20,9 @@ load_dotenv(".env")
 logging.config.fileConfig("app/config/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
+
 if not firebase_admin._apps:
-
-    fb_service_acc_path = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON_PATH")
-    fb_service_acc_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
-
-    if fb_service_acc_json:
-        cred_dict = json.loads(fb_service_acc_json)
-        cred = credentials.Certificate(cred_dict)
-        logger.info("Firebase credentials loaded from json.")
-    elif fb_service_acc_path:
-        with open(fb_service_acc_path, 'r') as file:
-            cred_dict = json.load(file)
-            cred = credentials.Certificate(cred_dict)
-        logger.info("Firebase credentials loaded from path.")
-    else:
-        cred = credentials.ApplicationDefault()
-        logger.warning("No Firebase service account provided. Using App Default ...")
-
+    cred = get_fb_cred()
     default_app = firebase_admin.initialize_app(cred)
 logger.info("Firebase app initialized: %s", default_app.name)
 
@@ -50,7 +33,7 @@ async def lifespan(app: FastAPI):
     logger.debug(f"Logging level: {logging.getLevelName(logger.getEffectiveLevel())}")
     if os.getenv("SERVER_ENVIRONMENT") == "testing":
         test_token = create_test_token()
-        logger.debug(f"Test token: {test_token}")
+        logger.debug(f"Test token:\n\n\n{test_token}\n\n")
     yield
     logger.info("Shutting down the application")
 
