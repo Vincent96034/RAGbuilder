@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from fastapi import Depends, APIRouter, HTTPException
 
 from app.db.database import get_db
-from app.schemas import CurrentUserSchema, InvokeResultSchema
-from app.ops.user_ops import get_current_user
+from app.schemas import ApiUserSchema, InvokeResultSchema
+from app.ops.api_auth import get_api_user
 from app.ops.project_ops import check_user_project_access, get_project, get_model_type
 from app.ops.model_factory import model_factory
 
@@ -25,11 +25,10 @@ router = APIRouter(
 async def invoke_model(
     project_id: str,
     input_data: str,
-    current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
+    current_user: Annotated[ApiUserSchema, Depends(get_api_user)],
     db=Depends(get_db)
 ) -> List[InvokeResultSchema]:
     """Invoke a model for a project."""
-    # todo: implement API key authentication
     # todo: refactor into smaller functions (also see project_ops.py)
     # todo: better handle input data - allow for more complex data types
     # todo: better handle output data - remove some of the metadata

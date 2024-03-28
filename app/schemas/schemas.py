@@ -21,6 +21,7 @@ class BaseSchema(BaseModel):
 
 
 class CreateUserRequestSchema(BaseSchema):
+    """Schema for creating a new user."""
     first_name: str
     last_name: str
     email: str
@@ -28,21 +29,25 @@ class CreateUserRequestSchema(BaseSchema):
 
 
 class TokenSchema(BaseSchema):
+    """Schema for a token."""
     token: str
 
 
 class CurrentUserSchema(BaseSchema):
+    """Schema for the current user."""
     email: str
     user_id: str
 
 
 class CreateProjectSchema(BaseSchema):
+    """Schema for creating a new project."""
     title: str
     description: str
     modeltype_id: str
 
 
 class UpdateProjectSchema(BaseSchema):
+    """Schema for updating a project."""
     project_id: str
     title: Optional[str] = None
     description: Optional[str] = None
@@ -50,6 +55,7 @@ class UpdateProjectSchema(BaseSchema):
 
 
 class ProjectSchema(BaseSchema):
+    """Schema for a project."""
     project_id: str
     title: str
     description: str
@@ -68,6 +74,7 @@ class ProjectSchema(BaseSchema):
 
 
 class ModelTypeSchema(BaseSchema):
+    """Schema for a model type."""
     modeltype_id: str
     title: str
     description: str
@@ -75,6 +82,7 @@ class ModelTypeSchema(BaseSchema):
 
 
 class CreateFileSchema(BaseSchema):
+    """Schema for creating a new file."""
     project_id: str
     file_name: str
     file_type: str
@@ -84,23 +92,41 @@ class CreateFileSchema(BaseSchema):
 
 
 class FileSchema(BaseSchema):
+    """Schema for a file."""
     file_id: str
     file_name: str
     file_type: str
-    metadata: Optional[dict] = None
     created_at: str
+    metadata: Optional[dict] = None
 
 class InvokeResultSchema(BaseSchema):
+    """Schema for the result of invoking a model."""
     page_content: str
     metadata: dict
 
 
 class DeleteFileSchema(BaseSchema):
+    """Schema for deleting a file."""
     file_id: str
 
 
 class FileMetadataSchema(BaseSchema):
+    """Schema for file metadata."""
     metadata: dict
+
+
+class ApiUserSchema(BaseSchema):
+    """Schema for an API user (excluding the API key)."""
+    user_id: str
+    created_at: str
+    expires_at: str
+
+class ApiKeySchema(BaseSchema):
+    """Schema for an API key."""
+    api_key: str
+    user_id: str
+    created_at: str
+    expires_at: str
 
 
 # remember to add new schemas to __all__ in app/schemas/__init__.py

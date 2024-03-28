@@ -5,9 +5,21 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, status, Depends
 from fastapi.exceptions import HTTPException
 
-from app.schemas import CreateUserRequestSchema, TokenSchema, CurrentUserSchema
-from app.ops.user_ops import (get_current_user, authenticate_user,
-                              create_and_commit_user, check_user_exists, delete_and_commit_user)
+from app.schemas import (
+    CreateUserRequestSchema,
+    TokenSchema,
+    CurrentUserSchema,
+    ApiKeySchema
+)
+from app.ops.user_ops import (
+    get_current_user,
+    authenticate_user,
+    create_and_commit_user,
+    check_user_exists,
+    delete_and_commit_user
+)
+from app.ops.api_auth import create_api_key, delete_api_key
+from app.db.database import get_db
 
 
 load_dotenv(".env")
@@ -20,7 +32,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}})
 
 
-@router.post("/create_user", status_code=status.HTTP_201_CREATED)
+@router.post("/user", status_code=status.HTTP_201_CREATED)
 async def create_user(
     request: CreateUserRequestSchema
 ) -> dict:
@@ -63,7 +75,7 @@ async def verify_token(
     return user
 
 
-@router.delete("/delete_user", status_code=status.HTTP_200_OK)
+@router.delete("/user", status_code=status.HTTP_200_OK)
 async def delete_user(
     user: Annotated[CurrentUserSchema, Depends(get_current_user)],
 ) -> dict:
@@ -80,3 +92,40 @@ async def delete_user(
     if user is None:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return delete_and_commit_user(user.email)
+
+
+@router.post("/api_key", status_code=status.HTTP_201_CREATED)
+async def create_api_key_for_user(
+    user: Annotated[CurrentUserSchema, Depends(get_current_user)],
+    db=Depends(get_db)
+) -> ApiKeySchema:
+    """Create an API key for a user.
+
+    Args:
+        user (User): The authenticated user.
+
+    Returns:
+        dict: A message indicating the API key was created.
+    """
+    api_key = create_api_key(user.user_id, db)
+    logger.debug(f"API key created for user: {user.email}")
+    return ApiKeySchema.from_model(api_key)
+    
+
+@router.delete("/api_key", status_code=status.HTTP_200_OK)
+async def delete_api_key_for_user(
+    api_key: str,
+    user: Annotated[CurrentUserSchema, Depends(get_current_user)],
+    db=Depends(get_db)
+) -> dict:
+    """Delete an API key for a user.
+
+    Args:
+        api_key (str): The API key to delete.
+        user (User): The authenticated user.
+
+    Returns:
+        dict: A message indicating the API key was deleted.
+    """
+    logger.debug(f"Deleting API key for user: {user.email}")
+    return delete_api_key(api_key, user.user_id, db)

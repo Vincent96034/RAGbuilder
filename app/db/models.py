@@ -77,6 +77,19 @@ class FileModel(BaseModel):
         doc_data = file.to_dict()
         doc_data["file_id"] = file.id
         return FileModel(**doc_data)
+    
+
+@dataclass
+class ApiKeyModel(BaseModel):
+    api_key: str
+    user_id: str
+    created_at: str
+    expires_at: str
+
+    def from_firebase(api_key: DocumentReference):
+        doc_data = api_key.to_dict()
+        doc_data["api_key"] = api_key.id
+        return ApiKeyModel(**doc_data)
 
 
 # class DocumentModel(Base):
