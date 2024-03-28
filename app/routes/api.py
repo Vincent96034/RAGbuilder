@@ -7,8 +7,13 @@ from fastapi import Depends, APIRouter, HTTPException
 from app.db.database import get_db
 from app.schemas import ApiUserSchema, InvokeResultSchema
 from app.ops.api_auth import get_api_user
-from app.ops.project_ops import check_user_project_access, get_project, get_model_type
 from app.ops.model_factory import model_factory
+from app.ops.project_ops import (
+    check_user_project_access,
+    get_project,
+    get_model_type,
+    clean_system_metadata
+)
 
 
 
@@ -28,10 +33,16 @@ async def invoke_model(
     current_user: Annotated[ApiUserSchema, Depends(get_api_user)],
     db=Depends(get_db)
 ) -> List[InvokeResultSchema]:
-    """Invoke a model for a project."""
-    # todo: refactor into smaller functions (also see project_ops.py)
+    """Invoke a model for a project.
+    
+    Args:
+        - project_id (str): The ID of the project.
+        - input_data (str): The input data for the model.
+
+    Returns:
+        List[InvokeResultSchema]: The result of the model invocation.
+    """
     # todo: better handle input data - allow for more complex data types
-    # todo: better handle output data - remove some of the metadata
 
     if not check_user_project_access(project_id, current_user.user_id, db):
         logger.debug(f"User `{current_user.user_id}` does not have access to project `{project_id}`")
@@ -48,4 +59,5 @@ async def invoke_model(
         namespace = current_user.user_id,
         user_id = current_user.user_id,)
     logger.debug("Model invoked successfully")
+    data = clean_system_metadata(data)
     return data
