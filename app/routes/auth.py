@@ -108,7 +108,7 @@ async def create_api_key_for_user(
         dict: A message indicating the API key was created.
     """
     api_key = create_api_key(user.user_id, db)
-    logger.debug(f"API key created for user: {user.email}")
+    logger.debug(f"API key created for user: {user.user_id}")
     return ApiKeySchema.from_model(api_key)
     
 
@@ -127,5 +127,5 @@ async def delete_api_key_for_user(
     Returns:
         dict: A message indicating the API key was deleted.
     """
-    logger.debug(f"Deleting API key for user: {user.email}")
+    logger.debug(f"Deleting API key for user: {user.user_id}")
     return delete_api_key(api_key, user.user_id, db)

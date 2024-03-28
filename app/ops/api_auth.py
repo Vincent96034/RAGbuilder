@@ -37,7 +37,7 @@ async def get_api_user(
     return verify_api_token(token, db)
 
 
-async def create_api_key(user_id: str, db: firestore.Client) -> ApiKeyModel:
+def create_api_key(user_id: str, db: firestore.Client) -> ApiKeyModel:
     """Create an API key for a user. If the user already has an API key, return it.
     
     Args:
@@ -66,7 +66,7 @@ async def create_api_key(user_id: str, db: firestore.Client) -> ApiKeyModel:
         raise Exception("Failed to create the api_key correctly.")
     
 
-async def delete_api_key(api_key: str, user_id: str, db: firestore.Client) -> dict:
+def delete_api_key(api_key: str, user_id: str, db: firestore.Client) -> dict:
     """Delete an API key from the database."""
     doc_ref = db.collection("api_keys").document(api_key)
     api_token = doc_ref.get()
