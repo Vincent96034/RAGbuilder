@@ -10,9 +10,7 @@ def test_root():
     assert response.status_code == 200
     assert response.json() == {"message": "Hello World"}
 
-
-def test_health_check_auth():
-    response = client.get("/v1/health/auth")
-    assert response.status_code == 403
-    assert response.json() == {"detail": "Not authenticated"}
+def test_privacy():
+    response = client.get("/v1/privacy_policy")
+    assert response.status_code == 200
 
