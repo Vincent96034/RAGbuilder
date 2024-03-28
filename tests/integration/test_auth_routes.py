@@ -25,7 +25,7 @@ def test_create_user_route(existing_user, expected_status, expected_detail, mock
         "last_name": "User",
         "email": "testuser@example.com",
         "password": "a_secure_password"}
-    response = client.post("/v1/auth/create_user", json=user_data)
+    response = client.post("/v1/auth/user", json=user_data)
     # assert response
     assert response.status_code == expected_status
     if existing_user:
@@ -65,7 +65,7 @@ def test_delete_user_success(current_user_dependency_factory, mocker):
     # Mock delete_and_commit_user function
     mocker.patch("app.routes.auth.delete_and_commit_user", return_value={
                  "message": "User deleted successfully"})
-    response = client.delete("/v1/auth/delete_user")
+    response = client.delete("/v1/auth/user")
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {"message": "User deleted successfully"}
 
@@ -73,7 +73,7 @@ def test_delete_user_success(current_user_dependency_factory, mocker):
 def test_delete_user_unauthorized(current_user_dependency_factory, mocker):
     # Mock get_current_user to raise HTTPException for unauthorized access
     current_user_dependency_factory(None)
-    response = client.delete("/v1/auth/delete_user")
+    response = client.delete("/v1/auth/user")
     assert response.status_code == HTTPStatus.UNAUTHORIZED
     assert response.json() == {"detail": "Unauthorized"}
 
