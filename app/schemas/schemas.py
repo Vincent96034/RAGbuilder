@@ -1,6 +1,7 @@
 from typing import TypeVar, Type, Optional
 from pydantic import BaseModel
 from app.db.models import ProjectModel
+from datetime import datetime
 
 
 # Create a type variable for the model class
@@ -11,8 +12,12 @@ class BaseSchema(BaseModel):
     """Base schema class that provides a method to create a schema from a model."""
     @classmethod
     def from_model(cls: Type[T], model: T) -> T:
-        # Use Pydantic's model creation with **kwargs unpacking
-        return cls(**model.__dict__)
+        model_dict = model.__dict__.copy()
+        for key, value in model_dict.items():
+            # Check if the value is an instance of datetime and convert to string
+            if isinstance(value, datetime):
+                model_dict[key] = value.strftime('%Y-%m-%d %H:%M:%S')
+        return cls(**model_dict)
 
 
 class CreateUserRequestSchema(BaseSchema):
@@ -78,8 +83,23 @@ class CreateFileSchema(BaseSchema):
     metadata: Optional[dict] = None
 
 
+class FileSchema(BaseSchema):
+    file_id: str
+    file_name: str
+    file_type: str
+    metadata: Optional[dict] = None
+    created_at: str
+
 class InvokeResultSchema(BaseSchema):
     page_content: str
+    metadata: dict
+
+
+class DeleteFileSchema(BaseSchema):
+    file_id: str
+
+
+class FileMetadataSchema(BaseSchema):
     metadata: dict
 
 
