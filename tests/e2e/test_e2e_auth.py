@@ -8,7 +8,7 @@ from firebase_admin import auth
 
 from app.main import app
 from app.schemas import CreateUserRequestSchema
-from app.utils.testing import create_test_token
+from app.utils.helpers import create_test_token
 
 
 

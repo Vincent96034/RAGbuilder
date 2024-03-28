@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
     logger.debug(f"Logging level: {logging.getLevelName(logger.getEffectiveLevel())}")
     if os.getenv("SERVER_ENVIRONMENT") == "testing":
         test_token = create_test_token()
-        logger.debug(f"Test token: {test_token}")
+        logger.debug(f"Test token:\n\n\n{test_token}\n\n")
     yield
     logger.info("Shutting down the application")
 

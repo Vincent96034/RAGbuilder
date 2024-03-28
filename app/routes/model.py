@@ -28,7 +28,7 @@ async def get_model_type_from_id(
 
 
 @router.get("/", response_model=List[ModelTypeSchema])
-def get_all_model_types(
+async def get_all_model_types(
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
     db=Depends(get_db)
 ) -> List[ModelTypeSchema]:
