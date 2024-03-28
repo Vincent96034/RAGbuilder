@@ -48,7 +48,8 @@ class AbstractModel(ABC):
     def _invoke(self, chain: Runnable, input_data: Any = None, user_id: str = None):
         metadata = {
             "instance_id": self.instance_id or "unknown",
-            "user_id": user_id
+            "user_id": user_id,
+            "method": "invoke"
         }
         chain = chain.with_config({
             "tags": [self.instance_id or "unknown"],
