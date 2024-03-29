@@ -1,4 +1,6 @@
+import json
 from typing import List
+
 from firebase_admin import firestore
 from google.cloud.firestore import ArrayUnion
 from google.cloud.firestore_v1 import FieldFilter
@@ -10,6 +12,9 @@ from app.db.models import ProjectModel, ModelTypeModel, FileModel
 from app.schemas import CreateProjectSchema, UpdateProjectSchema, CreateFileSchema
 from app.utils import logger
 from app.ops.model_factory import model_factory
+
+# these keys are not allowed in metadata and output data will be cleaned of these keys
+SYSTEM_METADATA_KEYS = ["project_id", "file_id", "user_id"]
 
 
 def get_project(project_id: str, db: firestore.client) -> ProjectModel:
@@ -175,7 +180,8 @@ def get_multiple_files(file_ids: List[str], db: firestore.client) -> List[FileMo
 
     for i in range(0, len(file_ids), batch_size):
         batch_ids = file_ids[i:i+batch_size]
-        docs = db.collection("files").where(FieldPath.document_id(), "in", batch_ids).stream()
+        docs = db.collection("files").where(
+            FieldPath.document_id(), "in", batch_ids).stream()
 
         found_ids = set()
         for doc in docs:
@@ -233,3 +239,30 @@ def deindex_and_delete_files(
     # delete file
     db.collection('files').document(file_id).delete()
     logger.debug(f"File `{file_id}` deindexed and deleted successfully.")
+
+
+def check_file_metadatas(metadatas) -> dict:
+    if metadatas:
+        metadatas = json.loads(metadatas)
+        # validate that metadata is of form: {file_id: {metadata}}
+        for file_id in metadatas.keys():
+            if not isinstance(metadatas[file_id], dict):
+                raise HTTPException(
+                    status_code=400, detail="Metadata must be a dictionary")
+            for key in metadatas[file_id].keys():
+                if key in SYSTEM_METADATA_KEYS:
+                    # remove keys that are not allowed
+                    del metadatas[file_id][key]
+                    logger.warning(
+                        f"Metadata key `{key}` is not allowed and has been removed.")
+    else:
+        metadatas = {}
+    return metadatas
+
+
+def clean_system_metadata(data: List[Document]):
+    for doc in data:
+        for key in SYSTEM_METADATA_KEYS:
+            if key in doc.metadata.keys():
+                del doc.metadata[key]
+    return data

@@ -17,12 +17,15 @@ async def sanitize_text(content: bytes) -> bytes:
     
 
 async def sanitize_pdf(pdf_bytes: bytes) -> bytes:
-    """
-    Sanitizes a PDF file by removing JavaScript and other potentially unsafe elements.
-    This function modifies the PDF content in memory and returns the sanitized PDF content as bytes.
+    """Sanitizes a PDF file by removing JavaScript and other potentially unsafe elements.
+    This function modifies the PDF content in memory and returns the sanitized PDF content
+    as bytes.
 
-    :param pdf_bytes: The original PDF content as bytes.
-    :return: The sanitized PDF content as bytes.
+    Args:
+        pdf_bytes: The original PDF content as bytes.
+    
+    Returns:
+        The sanitized PDF content as bytes.
     """
     try:
         # Use BytesIO to create a file-like object from the bytes

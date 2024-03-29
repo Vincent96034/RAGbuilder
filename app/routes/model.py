@@ -20,18 +20,32 @@ router = APIRouter(
 @router.get("/{modeltype_id}", response_model=ModelTypeSchema)
 async def get_model_type_from_id(
     modeltype_id: str,
-    current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
+    _: Annotated[CurrentUserSchema, Depends(get_current_user)],
     db=Depends(get_db)
 ) -> ModelTypeSchema:
-    """Get the model type from the modeltype_id."""
+    """Get the model type from the modeltype_id.
+    
+    Args:
+        modeltype_id (str): The ID of the model type.
+
+    Returns:
+        ModelTypeSchema: The model type.
+    """
     return ModelTypeSchema.from_model(get_model_type(modeltype_id, db))
 
 
 @router.get("/", response_model=List[ModelTypeSchema])
 async def get_all_model_types(
-    current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
+    _: Annotated[CurrentUserSchema, Depends(get_current_user)],
     db=Depends(get_db)
 ) -> List[ModelTypeSchema]:
-    """Get all model types."""
+    """Get all model types.
+    
+    Args:
+        None
+
+    Returns:
+        List[ModelTypeSchema]: A list of model types.
+    """
     model_types = get_model_types(db)
     return [ModelTypeSchema.from_model(model_type) for model_type in model_types]

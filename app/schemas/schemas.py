@@ -1,7 +1,8 @@
 from typing import TypeVar, Type, Optional
 from pydantic import BaseModel
-from app.db.models import ProjectModel
 from datetime import datetime
+
+from app.db.models import ProjectModel
 
 
 # Create a type variable for the model class
