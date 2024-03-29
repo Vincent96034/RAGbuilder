@@ -48,13 +48,16 @@ class PDFHandler(AbstractFileHandler):
     ```
         handler = PDFHandler()
         documents = handler.read(file)
-    ```"""
+    ```
+    """
     async def read(self) -> List[Document]:
         content = await self.file.read()
         try:
             async with temporary_file(content, suffix=self.extension, sanitize_fn=sanitize_pdf) as tmp_path:
                 loader = PyPDFLoader(file_path=tmp_path)
                 documents = loader.load()
+                for doc in documents:
+                    doc.metadata.pop("source", None)
         except Exception as e:
             logger.error(f"Failed to process PDF: {e}")
             raise HTTPException(status_code=500, detail="Failed to process PDF")
@@ -69,13 +72,16 @@ class TXTHandler(AbstractFileHandler):
     ```
         handler = TXTHandler()
         documents = handler.read(file)
-    ```"""
+    ```
+    """
     async def read(self):
         content = await self.file.read()
         try:
             async with temporary_file(content, suffix=self.extension, sanitize_fn=sanitize_text) as tmp_path:
                 loader = TextLoader(file_path=tmp_path)
                 documents = loader.load()
+                for doc in documents:
+                    doc.metadata.pop("source", None)
         except Exception as e:
             logger.error(f"Failed to process TXT: {e}")
             raise HTTPException(status_code=500, detail="Failed to process TXT")

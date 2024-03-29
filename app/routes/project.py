@@ -7,12 +7,29 @@ from fastapi.exceptions import HTTPException
 from app.db.database import get_db
 from app.file_handler import FileHandler
 from app.ops.user_ops import get_current_user
-from app.schemas import (CurrentUserSchema, CreateProjectSchema, UpdateProjectSchema,
-                         ProjectSchema, CreateFileSchema, FileSchema, DeleteFileSchema)
-from app.ops.project_ops import (update_project, get_projects_for_user,
-                                 create_project, delete_project, check_user_project_access,
-                                 process_and_upload_document, get_model_type, create_file,
-                                 get_multiple_files, get_file, deindex_and_delete_files, check_file_metadatas)
+from app.schemas import (
+    CurrentUserSchema,
+    CreateProjectSchema,
+    UpdateProjectSchema,
+    ProjectSchema,
+    CreateFileSchema,
+    FileSchema,
+    DeleteFileSchema
+)
+from app.ops.project_ops import (
+    update_project,
+    get_projects_for_user,
+    create_project,
+    delete_project,
+    check_user_project_access,
+    process_and_upload_document,
+    get_model_type,
+    create_file,
+    get_multiple_files,
+    get_file,
+    deindex_and_delete_files,
+    check_file_metadatas
+)
 
 
 logger = logging.getLogger(__name__)

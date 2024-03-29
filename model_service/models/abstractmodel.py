@@ -1,21 +1,36 @@
 import os
-from typing import List, Any, Optional
 from abc import ABC, abstractmethod
+from typing import List, Any, Optional
 
+from langchain_core.vectorstores import VectorStore
 from langchain_core.runnables import Runnable
 from langchain.schema.document import Document
 
 
 class AbstractModel(ABC):
+    """Abstract class for models. Each implementation should define an instance_id and the
+    following methods: index, deindex (default available), and invoke.
+    
+    Args:
+        vectorstore (VectorStore, optional): The vectorstore to use for indexing.
+    """
     instance_id = None
 
-    def __init__(self, vectorstore=None, **kwargs):
+    def __init__(self, vectorstore: Optional[VectorStore] = None, **kwargs):
         self._check_environment()
         self.vectorstore = vectorstore
 
     @abstractmethod
-    def index(self, documents: List[Document], **kwargs):
-        """Define indexing for the model."""
+    def index(self, documents: List[Document], **kwargs) -> Any:
+        """Define indexing for the model.
+        
+        Args:
+            documents (List[Document]): A list of documents to index.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Any
+        """
         ...
 
     def deindex(self,
@@ -42,21 +57,45 @@ class AbstractModel(ABC):
     @abstractmethod
     def invoke(self, input_data, **kwargs) -> List[Document]:
         """Invoke the model with input data. This method should define Runnable and return
-        self._invoke(chain, input_data) to run the chain."""
+        self._invoke(chain, input_data) to run the chain.
+        
+        Args:
+            input_data: The input data to the model.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Document]: The result of the model invocation.
+        """
         ...
 
     def _invoke(self, chain: Runnable, input_data: Any = None, user_id: str = None):
+        """Invoke the model chain with input data. This method is used by the invoke
+        method and wraps the chain invocation with metadata for tracing.
+        
+        Args:
+            chain (Runnable): The chain to invoke.
+            input_data (Any): The input data for the chain.
+            user_id (str): The user ID.
+
+        Returns:
+            List[Document]: The result of the model invocation.
+        """
         metadata = {
             "instance_id": self.instance_id or "unknown",
             "user_id": user_id,
-            "method": "invoke"
-        }
+            "method": "invoke"}
         chain = chain.with_config({
             "tags": [self.instance_id or "unknown"],
             "metadata": metadata})
         return chain.invoke(input=input_data)
 
     def _check_environment(self):
+        """Check the environment for required variables. Can be overridden by subclasses.
+        Currently checks for LANGCHAIN_API_KEY and OPENAI_API_KEY.
+
+        Raises:
+            Exception: If either LANGCHAIN_API_KEY or OPENAI_API_KEY is not set.
+        """
         if os.getenv("LANGCHAIN_API_KEY") is None:
             raise Exception("LANGCHAIN_API_KEY is not set")
         if os.getenv("OPENAI_API_KEY") is None:

@@ -3,6 +3,7 @@ from langchain_pinecone import PineconeVectorStore
 
 
 class PineconeVectorStoreWrapper(PineconeVectorStore):
+    """Wrapper for PineconeVectorStore to allow for deletion by filter."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -5,15 +5,16 @@ import firebase_admin
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from app.routes.auth import router as auth_router
-from app.routes.root import router as root_router
-from app.routes.project import router as project_router
-from app.routes.model import router as model_router
-from app.routes.api import router as api_router
+from contextlib import asynccontextmanager
 
 from app.utils.helpers import create_test_token, get_fb_cred
-from contextlib import asynccontextmanager
+from app.routes import (
+    root_router,
+    auth_router,
+    project_router,
+    model_router,
+    api_router
+)
 
 
 load_dotenv(".env")

@@ -5,12 +5,15 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, status, Depends
 from fastapi.exceptions import HTTPException
 
+
+from app.db.database import get_db
 from app.schemas import (
     CreateUserRequestSchema,
     TokenSchema,
     CurrentUserSchema,
     ApiKeySchema
 )
+from app.ops.api_auth import create_api_key, delete_api_key
 from app.ops.user_ops import (
     get_current_user,
     authenticate_user,
@@ -18,8 +21,6 @@ from app.ops.user_ops import (
     check_user_exists,
     delete_and_commit_user
 )
-from app.ops.api_auth import create_api_key, delete_api_key
-from app.db.database import get_db
 
 
 load_dotenv(".env")

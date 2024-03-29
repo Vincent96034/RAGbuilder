@@ -12,6 +12,7 @@ class BaseModel:
 
 @dataclass
 class UserModel(BaseModel):
+    """User model. Represents a user in the db system."""
     user_id: str
     email: str
     email_verified: bool
@@ -33,6 +34,7 @@ class UserModel(BaseModel):
 
 @dataclass
 class ProjectModel(BaseModel):
+    """Project model. Represents a project in the db system."""
     project_id: str
     title: str
     description: str
@@ -51,6 +53,7 @@ class ProjectModel(BaseModel):
 
 @dataclass
 class ModelTypeModel(BaseModel):
+    """Model type model. Represents a model type in the db system."""
     modeltype_id: str
     description: str
     title: str
@@ -64,6 +67,7 @@ class ModelTypeModel(BaseModel):
 
 @dataclass
 class FileModel(BaseModel):
+    """File model. Represents a file in the db system."""
     file_id: str
     project_id: str
     file_name: str
@@ -81,6 +85,7 @@ class FileModel(BaseModel):
 
 @dataclass
 class ApiKeyModel(BaseModel):
+    """Api key model. Represents an API key in the db system."""
     api_key: str
     user_id: str
     created_at: str

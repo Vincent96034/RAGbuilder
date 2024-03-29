@@ -10,9 +10,10 @@ async def temporary_file(content, suffix="", sanitize_fn=None):
     """Context manager to create a temporary file with the given content and suffix.
     Automatically cleans up the file on exit.
 
-    :param content: Content to be written to the temporary file.
-    :param suffix: Suffix for the temporary file name, e.g., '.pdf'.
-    :param sanitize_fn: Optional function to sanitize the content before writing.
+    Args:
+        - content: Content to be written to the temporary file.
+        - suffix: Suffix for the temporary file name, e.g., '.pdf'.
+        - sanitize_fn: Optional function to sanitize the content before writing.
     """
     try:
         async with aiofiles.tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:

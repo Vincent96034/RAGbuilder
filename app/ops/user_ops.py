@@ -1,9 +1,13 @@
 import logging
 from dotenv import load_dotenv
 
-from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import HTTPException, status, Security
 from firebase_admin import auth
+from fastapi import HTTPException, status, Security
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    HTTPBearer,
+    HTTPAuthorizationCredentials
+)
 
 from app.db.models import UserModel
 from app.schemas import CurrentUserSchema
