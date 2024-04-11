@@ -1,6 +1,10 @@
-from .text_cleaning import simple_doc_cleaner
+from .cleaning import remove_newlines
+from .chunking import DocumentChunker
+from .upserting import VectorStoreUpserter
 
 
 __all__ = [
-    "simple_doc_cleaner"
+    "remove_newlines",
+    "DocumentChunker",
+    "VectorStoreUpserter"
 ]

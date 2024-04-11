@@ -6,8 +6,11 @@ from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from model_service.models.abstractmodel import AbstractModel
-from model_service.components import simple_doc_cleaner
-
+from model_service.components import (
+    remove_newlines,
+    DocumentChunker,
+    VectorStoreUpserter
+)
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +48,6 @@ class DefaultRAG(AbstractModel):
     # Retrieve similar documents
     model.invoke(
         input_data="Search query here.",
-        user_id="test_user_id",
         namespace="test_user_id",
         filters={"project_id": "test-project"})
     ```
@@ -69,56 +71,51 @@ class DefaultRAG(AbstractModel):
               documents: List[Document],
               *,
               metadata: dict = None,
-              namespace: str = None
+              namespace: str = None,
               ) -> None:
         """Indexes a list of documents by splitting them into chunks, cleaning, and then
         adding these chunks to the vector store.
 
-        Parameters:
-            - documents (List[Document]): The list of documents to be indexed. Each document
+        Args:
+            documents (List[Document]): The list of documents to be indexed. Each document
                 can (and should) have metadata attached to it.
-            - metadata (dict, optional): An optional dictionary of metadata to attach to the
+            metadata (dict, optional): An optional dictionary of metadata to attach to the
                 documents. Note that this is applied for all documents in the list.
-            - namespace (str, optional): An optional namespace identifier to scope the
+            namespace (str, optional): An optional namespace identifier to scope the
                 indexing operation. When specified, all chunks derived from the documents
                 are indexed under this namespace.
-            - k (int, optional): The number of similar documents to return. Defaults to 5.
+            k (int, optional): The number of similar documents to return. Defaults to 5.
 
         Returns:
             None
         """
+        if metadata is not None:
+            [document.metadata.update(metadata) for document in documents]
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap)
-        # Note: metadata is attached to each chunk
-        chunks = splitter.split_documents(documents=documents)
-        chunks = simple_doc_cleaner(chunks)
-        if metadata is not None:
-            [chunk.metadata.update(metadata) for chunk in chunks]
-        logger.debug(
-            f"Indexing {len(documents)} documents ({len(chunks)} chunks). Now upserting ...")
-        self.vectorstore.add_documents(chunks, namespace=namespace)
+        chunk_documents = DocumentChunker(splitter)
+        upsert_documents = VectorStoreUpserter(self.vectorstore, namespace=namespace)
+
+        chain = remove_newlines | chunk_documents | upsert_documents
+        chain = self._configure_chain(chain, user_id=namespace)
+        return chain.batch(documents)
 
     def invoke(self,
                input_data: str,
                *,
                filters: dict = {},
                namespace: str = None,
-               user_id: str = None,
                ) -> List[Document]:
         """Invoke the model to retrieve documents similar to the given input data,
         applying specific filters. User can set a namespace to scope the search query.
 
-        Parameters:
-            - input_data: The input data to use for the retrieval operation. This should be 
-                a text string.
-            - filters (dict, optional): Additional search parameters and filters to apply to
+        Args:
+            input_data (str): The input data to use for the retrieval operation
+            filters (dict, optional): Additional search parameters and filters to apply to
                 the retrieval query. By default, the number of results ('k') is set to 4.
-            - namespace (str, optional): An optional namespace identifier to scope the
+            namespace (str, optional): An optional namespace identifier to scope the 
                 search query. This can also be set in the filters dictionary.
-            - user_id (str, optional): The identifier of the user for whom the documents
-                are being retrieved. This parameter is used to trace a users runs, when
-                `LangSmith` is active.
 
         Returns:
             List[Document]: The list of k most similar documents retrieved by the model..
@@ -129,4 +126,6 @@ class DefaultRAG(AbstractModel):
         retriever = self.vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs=search_kwargs)
-        return self._invoke(retriever, input_data, user_id=user_id)
+
+        chain = self._configure_chain(retriever, user_id=namespace)
+        return chain.invoke(input_data)
