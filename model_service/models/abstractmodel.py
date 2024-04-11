@@ -81,15 +81,20 @@ class AbstractModel(ABC):
         Returns:
             List[Document]: The result of the model invocation.
         """
+        chain = self._configure_chain(chain, user_id=user_id)
+        return chain.invoke(input=input_data)
+
+    def _configure_chain(self, chain: Runnable, user_id: str = None) -> Runnable:
+        method_name = inspect.stack()[1].function or "unknown"
         metadata = {
             "instance_id": self.instance_id or "unknown",
             "user_id": user_id,
-            "method": inspect.stack()[1].function or "unknown"}
-        print(metadata)
+            "method": method_name}
         chain = chain.with_config({
+            "run_name": f"[{self.instance_id}]-{method_name}",
             "tags": [self.instance_id or "unknown"],
             "metadata": metadata})
-        return chain.invoke(input=input_data)
+        return chain
 
     def _check_environment(self):
         """Check the environment for required variables. Can be overridden by subclasses.

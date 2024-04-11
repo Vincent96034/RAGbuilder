@@ -1,10 +1,10 @@
-from .cleaning import simple_doc_cleaner
-from .chunking import chunk_documents
-from .upserting import upsert_documents
+from .cleaning import remove_newlines
+from .chunking import DocumentChunker
+from .upserting import VectorStoreUpserter
 
 
 __all__ = [
-    "simple_doc_cleaner",
-    "chunk_documents",
-    "upsert_documents"
+    "remove_newlines",
+    "DocumentChunker",
+    "VectorStoreUpserter"
 ]
