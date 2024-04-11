@@ -29,8 +29,5 @@ jobs:
 
       - name: Run tests
         env:
-          SQLALCHEMY_DATABASE_URL: "sqlite:///:memory:"
-          ENCRYPTION_SECRET_KEY: sycretkey_testenv
-          ENCRYPTION_ALGORITHM: HS256
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: pytest -m "not e2e"

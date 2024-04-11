@@ -48,7 +48,6 @@ class DefaultRAG(AbstractModel):
     # Retrieve similar documents
     model.invoke(
         input_data="Search query here.",
-        user_id="test_user_id",
         namespace="test_user_id",
         filters={"project_id": "test-project"})
     ```
