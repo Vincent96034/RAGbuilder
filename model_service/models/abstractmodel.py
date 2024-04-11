@@ -16,6 +16,7 @@ class AbstractModel(ABC):
         vectorstore (VectorStore, optional): The vectorstore to use for indexing.
     """
     instance_id = None
+    """The instance ID of the model. This should be set by subclasses."""
 
     def __init__(self, vectorstore: Optional[VectorStore] = None, **kwargs):
         self._check_environment()
@@ -31,6 +32,20 @@ class AbstractModel(ABC):
 
         Returns:
             Any
+        """
+        ...
+
+    @abstractmethod
+    def invoke(self, input_data, **kwargs) -> List[Document]:
+        """Invoke the model with input data. This method should define Runnable and return
+        self._invoke(chain, input_data) to run the chain.
+
+        Args:
+            input_data: The input data to the model.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            List[Document]: The result of the model invocation.
         """
         ...
 
@@ -55,36 +70,10 @@ class AbstractModel(ABC):
         self.vectorstore.delete(ids, delete_all=delete_all,
                                 filter=filter, namespace=namespace)
 
-    @abstractmethod
-    def invoke(self, input_data, **kwargs) -> List[Document]:
-        """Invoke the model with input data. This method should define Runnable and return
-        self._invoke(chain, input_data) to run the chain.
-
-        Args:
-            input_data: The input data to the model.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            List[Document]: The result of the model invocation.
-        """
-        ...
-
-    def _run(self, chain: Runnable, input_data: Any = None, user_id: str = None):
-        """Run a chain with input data. This method is wraps the chain invocation with
-        metadata for tracing.
-
-        Args:
-            chain (Runnable): The chain to invoke.
-            input_data (Any): The input data for the chain.
-            user_id (str): The user ID.
-
-        Returns:
-            List[Document]: The result of the model invocation.
-        """
-        chain = self._configure_chain(chain, user_id=user_id)
-        return chain.invoke(input=input_data)
-
     def _configure_chain(self, chain: Runnable, user_id: str = None) -> Runnable:
+        """Configure the chain with metadata for tracing. Apply this before invoking the
+        chain to attach metadata to the run.
+        """
         method_name = inspect.stack()[1].function or "unknown"
         metadata = {
             "instance_id": self.instance_id or "unknown",
