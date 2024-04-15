@@ -5,7 +5,7 @@ from langchain.schema.document import Document
 from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from model_service.models.abstractmodel import AbstractModel
+from model_service.models._abstractmodel import AbstractModel
 from model_service.components import (
     remove_newlines,
     DocumentChunker,

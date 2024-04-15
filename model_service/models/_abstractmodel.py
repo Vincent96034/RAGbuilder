@@ -21,6 +21,7 @@ class AbstractModel(ABC):
     def __init__(self, vectorstore: Optional[VectorStore] = None, **kwargs):
         self._check_environment()
         self.vectorstore = vectorstore
+        print(f"Model `{self.instance_id}` initialized.")
 
     @abstractmethod
     def index(self, documents: List[Document], **kwargs) -> Any:

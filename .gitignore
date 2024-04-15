@@ -168,3 +168,6 @@ notes.txt
 dev.ipynb
 dev.py
 credentials/
+
+# all files / folders that start with "local"
+local*
