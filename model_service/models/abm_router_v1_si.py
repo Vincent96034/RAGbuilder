@@ -11,25 +11,38 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
     RunnableParallel,
     RunnableLambda,
-    RunnablePassthrough
 )
 
 from model_service.models._abstractmodel import AbstractModel
+from model_service.components.chains import (
+    build_stuff_chain,
+    build_reduce_chain,
+    build_map_chain
+)
 from model_service.components import (
     remove_newlines,
     DocumentChunker,
-    VectorStoreUpserter,
-    BatchChainRunner
+    VectorStoreUpserter
 )
 
 logger = logging.getLogger(__name__)
 
-summarize_prompt_template = """Write a concise summary of the following:
+
+SUMMARIZE_PROMPT = PromptTemplate.from_template(
+    """Write a concise summary (about 300 words) of the following:
 
 "{context}"
 
 CONCISE SUMMARY:"""
-summarize_prompt = PromptTemplate.from_template(summarize_prompt_template)
+)
+
+SUMMARIZE_PROMPT_SHORT = PromptTemplate.from_template(
+    """Write a concise summary (max 200 words) of the following:
+
+"{context}"
+
+CONCISE SUMMARY:"""
+)
 
 
 class ABMRouterV1SI(AbstractModel):
@@ -83,40 +96,15 @@ class ABMRouterV1SI(AbstractModel):
             chunk_size=self.chunk_size_si, chunk_overlap=self.chunk_overlap_si)
         upsert_documents = VectorStoreUpserter(self.vectorstore, namespace=namespace)
 
-        def _llm_to_doc_parser(out):
-            return Document(
-                page_content=out["summary"].content,
-                metadata=out["document"].metadata.copy())
-
-        def _merge_summaries(docs):
-            page_content = " ".join([doc.page_content for doc in docs])
-            doc = Document(page_content=page_content, metadata=docs[0].metadata.copy())
-            doc.metadata["is_summary"] = True
-            return doc
-
         # stuff chain: if the document is small enough, summarize it directly
-        stuff_chain = (
-            RunnableParallel(
-                summary=summarize_prompt | self.llm,
-                document=RunnablePassthrough(),
-            )
-            | RunnableLambda(lambda out: _llm_to_doc_parser(out))
-        )
+        stuff_chain = build_stuff_chain(self.llm, SUMMARIZE_PROMPT)
 
-        # map chain: split the document into chunks, summarize each chunk
-        batch_stuff_chain = BatchChainRunner(stuff_chain)
-        print(type(batch_stuff_chain))
-
-        map_chain = (
-            DocumentChunker(summary_splitter)
-            | RunnableLambda(batch_stuff_chain)
-        ).with_config({"run_name": "Map Chain"})
+        # map chain: split the doc into chunks, summarize each
+        stuff_chain_mapping = build_stuff_chain(self.llm, SUMMARIZE_PROMPT_SHORT)
+        map_chain = build_map_chain(summary_splitter, stuff_chain_mapping)
 
         # reduce chain: combine the summaries of the chunks
-        reduce_chain = (
-            RunnableLambda(lambda docs: _merge_summaries(docs))
-            | stuff_chain
-        ).with_config({"run_name": "Reduce Chain"})
+        reduce_chain = build_reduce_chain(stuff_chain)
 
         # map-reduce chain: split doc into chunks, summarize each, combine the summaries
         map_reduce_chain = (map_chain | reduce_chain).with_config(
