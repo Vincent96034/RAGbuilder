@@ -1,7 +1,10 @@
-name: Manual Merge main to prod
+name: deploy-to-prod
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   merge-to-prod:
@@ -10,13 +13,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Ensures all history is fetched
+          fetch-depth: 0
       - name: Setup Git
         run: |
-          git config --global user.email "vhaunberger@gmail.com"
-          git config --global user.name "Vincent Haunberger"
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
       - name: Merge main to prod
         run: |
           git checkout prod
           git merge --no-ff main -m "Manual merge of main into prod"
           git push origin prod
+          
