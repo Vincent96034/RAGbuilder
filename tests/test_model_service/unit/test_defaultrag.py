@@ -2,12 +2,12 @@ import os
 import unittest
 from unittest.mock import patch
 
-from model_service.models import DefaultRAG
+from model_service.models import RAGVanillaV1
 
 
 class TestDefaultRAG(unittest.TestCase):
 
-    @patch('model_service.models.defaultrag.VectorStore')
+    @patch('model_service.models.rag_vanilla_v1.VectorStore')
     def setUp(self, MockVectorStore):
         # Mock the VectorStore passed during initialization
         self.mock_vectorstore = MockVectorStore()
@@ -15,7 +15,7 @@ class TestDefaultRAG(unittest.TestCase):
         os.environ["LANGCHAIN_API_KEY"] = "test_langchain_api_key"
         os.environ["OPENAI_API_KEY"] = "test_openai_api_key"
         # Initialize DefaultRAG with the mocked VectorStore
-        self.model = DefaultRAG(self.mock_vectorstore)
+        self.model = RAGVanillaV1(self.mock_vectorstore)
 
     def tearDown(self):
         # Remove it to avoid side effects
@@ -28,7 +28,7 @@ class TestDefaultRAG(unittest.TestCase):
         self.assertEqual(self.model.chunk_overlap, 50)
         self.assertEqual(self.model.vectorstore, self.mock_vectorstore)
 
-    @patch('model_service.models.DefaultRAG.invoke')
+    @patch('model_service.models.RAGVanillaV1.invoke')
     def test_invoke(self, mock_invoke):
         # Prepare inputs and call invoke
         input_data = "Search query here."
