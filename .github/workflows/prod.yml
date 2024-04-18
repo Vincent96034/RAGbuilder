@@ -1,0 +1,22 @@
+name: Manual Merge main to prod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  merge-to-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Ensures all history is fetched
+      - name: Setup Git
+        run: |
+          git config --global user.email "vhaunberger@gmail.com"
+          git config --global user.name "Vincent Haunberger"
+      - name: Merge main to prod
+        run: |
+          git checkout prod
+          git merge --no-ff main -m "Manual merge of main into prod"
+          git push origin prod
