@@ -10,11 +10,13 @@ certifi==2024.2.2
 cffi==1.16.0
 charset-normalizer==3.3.2
 click==8.1.7
+cohere==5.1.8
 cryptography==42.0.5
 dataclasses-json==0.6.4
 Deprecated==1.2.14
 distro==1.9.0
 fastapi==0.110.0
+fastavro==1.9.4
 firebase-admin==6.5.0
 frozenlist==1.4.1
 google-api-core==2.17.1
@@ -39,8 +41,9 @@ iniconfig==2.0.0
 jsonpatch==1.33
 jsonpointer==2.4
 langchain==0.1.13
+langchain-cohere==0.1.2
 langchain-community==0.0.29
-langchain-core==0.1.33
+langchain-core==0.1.42
 langchain-openai==0.1.1
 langchain-pinecone==0.0.3
 langchain-text-splitters==0.0.1
@@ -83,6 +86,7 @@ starlette==0.36.3
 tenacity==8.2.3
 tiktoken==0.6.0
 tqdm==4.66.2
+types-requests==2.31.0.20240406
 typing-inspect==0.9.0
 typing_extensions==4.10.0
 uritemplate==4.1.1
