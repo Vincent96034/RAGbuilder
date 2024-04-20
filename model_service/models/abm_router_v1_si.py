@@ -8,7 +8,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.vectorstores import VectorStore
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain.agents import AgentExecutor
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import (
     RunnableParallel,
     RunnableLambda,
@@ -45,32 +45,64 @@ SUMMARIZE_PROMPT_SHORT = PromptTemplate.from_template(
 CONCISE SUMMARY:"""
 )
 
-# todo: adjust this prompt for the router agent / react agent
-REACT_AGENT_PROMPT = PromptTemplate.from_template(
-    """Answer the following questions as best you can. You have access to the following tools:
+ROUTE_AGENT_PROMPT = PromptTemplate.from_template(
+    """Given a user query, decide which document retrieval method to use by responding with only one word: "chunk", "summary", or "hybrid". Use the following criteria to make your decision:
 
-            {tools}
+Chunk Retriever: Choose "chunk" if the user's query specifies the need for detailed, specific information from large documents, where extracting particular sections or chunks of text directly related to the query is necessary.
+Summary Retriever: Choose "summary" if the user's query indicates a preference for brief overviews or summaries of documents to quickly grasp the main points without needing detailed evidence or excerpts.
+Hybrid Retriever: Choose "hybrid" if the user's query suggests a combination of needs, such as both a general understanding of the topic and specific details from the documents, necessitating a blend of summaries and specific chunks.
 
-            Use the following format:
+<query>
+{query}
+</query>
 
-            Question: the input question you must answer
-            Thought: you should always think about what to do
-            Action: the action to take, should be one of [{tool_names}]
-            Action Input: the input to the action
-            Observation: the result of the action
-            ... (this Thought/Action/Action Input/Observation can repeat N times)
-            Thought: I now know the final answer
-            Final Answer: the final answer to the original input question
-
-            Begin!
-
-            Question: {input}
-            Thought:{agent_scratchpad}"""
+YOUR RESPONSE:"""
 )
 
 
 class ABMRouterV1SI(AbstractModel):
-    """AgentBasedModel-Router-V1-SearchIndex"""
+    """The AgentBasedModel-Router-V1-SearchIndex (ABMRouterV1SI) uses a Router Agent to
+    decide in which Vector-Store to search in. Documents indexed are summarized. When
+    invoked, the agent decides whether to search for the query in the chunked documents,
+    the summaries, or both.
+
+    Initialization Parameters:
+        vectorstore (VectorStore): An instance of VectorStore that this model will use for
+            storing and retrieving document vectors.
+        index_llm (Optional[BaseLanguageModel], optional): A language model used for
+            indexing. Defaults to None, which auto-selects a default language model
+            configuration.
+        invoke_llm (Optional[BaseLanguageModel], optional): A language model used for
+            invoking or querying. Defaults to None, automatically selecting a default
+            model when needed.
+        llm_token_limit (Optional[int], optional): The maximum number of tokens that the
+            language model can process in one go. Necessary if a language model is
+            provided. Defaults to None.
+        chunk_size (int, optional): The size of text chunks, in characters, that documents
+            should be split into for processing. Defaults to 1500.
+        chunk_overlap (int, optional): The number of characters that consecutive chunks
+            should overlap to maintain context. Defaults to 50.
+        chunk_size_si (int, optional): Similar to chunk_size, but specifically for search
+            indexing. Defaults to 40,000.
+        chunk_overlap_si (int, optional): The overlap for chunks specifically in search
+            indexing. Defaults to 2000.
+        k (int, optional): The number of documents to retrieve during the invoke process.
+            Defaults to 5.
+
+    Usage:
+    ```python
+    # Initialize the VectorStore and models
+    vectorstore = VectorStoreImplementation()
+    model = ABMRouterV1SI(vectorstore)
+    documents = List[Document]
+
+    # Index documents
+    model.index(documents, namespace="your_namespace")
+
+    # Retrieve and process documents based on input query
+    results = model.invoke("Your query here.", namespace="your_namespace")
+    ```
+    """
     instance_id = "ABM-router-v1-si"
 
     def __init__(
@@ -172,28 +204,42 @@ class ABMRouterV1SI(AbstractModel):
         if namespace:
             search_kwargs["namespace"] = namespace
         if self.invoke_llm is None:
-            # todo: lookup model id
-            self.invoke_llm = ChatOpenAI(temperature=0, model_name="gpt-4")
+            self.invoke_llm = ChatOpenAI(temperature=0, model_name="gpt-4-turbo")
 
-        # define tools of agent
-        # todo: append filter for is_summary=False/True
+        search_kwargs['filter']['is_summary'] = False
         chunk_retriever = self.vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs=search_kwargs)
+
+        search_kwargs['filter']['is_summary'] = True
         summary_retriever = self.vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs=search_kwargs)
-        # todo: create hybrid retriever
-        hybrid_retriever = ""
-        tools = [chunk_retriever, summary_retriever, hybrid_retriever]
 
-        # todo: build 2 models:
-        # todo: - router: that just selects the retriever
-        # todo: - react: that makes use of tools to answer the question
-        # from langchain.agents import create_react_agent
+        hybrid_retriever = RunnableParallel(
+            chunk_search=chunk_retriever,
+            summary_search=summary_retriever)
 
-        # create agent
-        agent = ""
-        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        chain = self._configure_chain(agent_executor, user_id=namespace)
-        return chain.invoke(input_data)
+        def _route(info):
+            if "summary" in info["retriever"].lower():
+                retr = summary_retriever
+            elif "hybrid" in info["retriever"].lower():
+                retr = hybrid_retriever
+            else:
+                retr = chunk_retriever
+
+            query = info["query"]
+            return retr.invoke(query)
+
+        router_agent = (
+            ROUTE_AGENT_PROMPT
+            | self.invoke_llm
+            | StrOutputParser()
+        )
+
+        chain = (
+            {"retriever": router_agent, "query": lambda x: x["query"]}
+            | RunnableLambda(_route)
+        )
+        chain = self._configure_chain(chain, user_id=namespace)
+        return chain.invoke({"query": input_data})
