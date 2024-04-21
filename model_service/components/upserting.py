@@ -25,8 +25,10 @@ class VectorStoreUpserter(BaseCustomRunnable):
         super().__init__(vectorstore=vectorstore, namespace=namespace)
 
     def invoke(self,
-               documents: List[Document],
+               documents: Document | List[Document],
                vectorstore: VectorStore,
                namespace: str = None
                ) -> List[str]:
+        if isinstance(documents, Document):
+            documents = [documents]
         return vectorstore.add_documents(documents, namespace=namespace)

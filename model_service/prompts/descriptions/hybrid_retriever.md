@@ -1,0 +1,1 @@
+Search for document chunks and document summaries. Useful for a combination of needs, such as both a general understanding of the topic and specific details from the documents
