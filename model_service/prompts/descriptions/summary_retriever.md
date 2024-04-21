@@ -1,0 +1,1 @@
+Search for document summaries. Useful for brief overviews of documents to quickly grasp the main points and get the big picture.

@@ -71,7 +71,6 @@ class RAGRerankV1CH(RAGVanillaV1):
         self.k_retrieve = k_retrieve
         self.k_rerank = k_rerank
 
-    # index method is inherited from RAGVanillaV1
     def index(self, documents: List[Document], namespace: str = None) -> None:
         """Indexes a list of documents by splitting them into chunks, cleaning, and then
         adding these chunks to the vector store.

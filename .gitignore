@@ -169,3 +169,7 @@ dev.ipynb
 dev.py
 credentials/
 local_data/
+
+
+# all files / folders that start with "local"
+local*
