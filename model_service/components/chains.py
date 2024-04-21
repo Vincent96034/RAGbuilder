@@ -50,6 +50,7 @@ def build_reduce_chain(stuff_chain):
 
 def _merge_summaries(docs):
     """Merge the summaries of multiple `Document`s into a single `Document`."""
+    print("_merge_summaries", docs)
     page_content = " ".join([doc.page_content for doc in docs])
     doc = Document(page_content=page_content, metadata=docs[0].metadata.copy())
     doc.metadata["is_summary"] = True
@@ -58,6 +59,8 @@ def _merge_summaries(docs):
 
 def _llm_to_doc_parser(out):
     """Parse the output of a language model into a `Document`."""
-    return Document(
+    doc = Document(
         page_content=out["summary"].content,
         metadata=out["document"].metadata.copy())
+    doc.metadata["is_summary"] = True
+    return doc

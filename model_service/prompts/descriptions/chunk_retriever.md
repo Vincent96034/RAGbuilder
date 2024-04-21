@@ -1,0 +1,1 @@
+Search for document chunks. Useful for detailed, specific information from large documents.
