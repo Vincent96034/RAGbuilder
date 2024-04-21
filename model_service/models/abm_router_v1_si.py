@@ -28,36 +28,10 @@ from model_service.components import (
 
 logger = logging.getLogger(__name__)
 
-
-SUMMARIZE_PROMPT = PromptTemplate.from_template(
-    """Write a concise summary (about 300 words) of the following:
-
-"{context}"
-
-CONCISE SUMMARY:"""
-)
-
-SUMMARIZE_PROMPT_SHORT = PromptTemplate.from_template(
-    """Write a concise summary (max 200 words) of the following:
-
-"{context}"
-
-CONCISE SUMMARY:"""
-)
-
-ROUTE_AGENT_PROMPT = PromptTemplate.from_template(
-    """Given a user query, decide which document retrieval method to use by responding with only one word: "chunk", "summary", or "hybrid". Use the following criteria to make your decision:
-
-Chunk Retriever: Choose "chunk" if the user's query specifies the need for detailed, specific information from large documents, where extracting particular sections or chunks of text directly related to the query is necessary.
-Summary Retriever: Choose "summary" if the user's query indicates a preference for brief overviews or summaries of documents to quickly grasp the main points without needing detailed evidence or excerpts.
-Hybrid Retriever: Choose "hybrid" if the user's query suggests a combination of needs, such as both a general understanding of the topic and specific details from the documents, necessitating a blend of summaries and specific chunks.
-
-<query>
-{query}
-</query>
-
-YOUR RESPONSE:"""
-)
+SUMMARIZE_PROMPT = PromptTemplate.from_file("model_service/prompts/summarize_300.md")
+SUMMARIZE_PROMPT_SHORT = PromptTemplate.from_file(
+    "model_service/prompts/summarize_200.md")
+ROUTE_AGENT_PROMPT = PromptTemplate.from_file("model_service/prompts/router_agent.md")
 
 
 class ABMRouterV1SI(AbstractModel):
@@ -134,6 +108,17 @@ class ABMRouterV1SI(AbstractModel):
               metadata: dict = None,
               namespace: str = None,
               ) -> None:
+        """Indexes documents by processing them into chunks and summarizing each chunk for
+        efficient retrieval. If metadata is provided, it updates the metadata for each
+        document before indexing.
+
+        Parameters:
+            documents (List[Document]): A list of documents to be indexed.
+            metadata (dict, optional): Metadata to update in each document before indexing.
+                Defaults to None.
+            namespace (str, optional): A namespace to categorize and retrieve the indexed
+                documents. Useful for multi-tenant environments. Defaults to None.
+        """
         if self.index_llm is None:
             self.index_llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo-16k")
             self.llm_token_limit = 16000
@@ -147,6 +132,8 @@ class ABMRouterV1SI(AbstractModel):
                 "issues with summarizing chunks. Decrease `chunk_size_si`.")
         if metadata is not None:
             [document.metadata.update(metadata) for document in documents]
+        for document in documents:
+            document.metadata["is_summary"] = False
 
         document_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
@@ -200,6 +187,18 @@ class ABMRouterV1SI(AbstractModel):
                filters: dict = {},
                namespace: str = None,
                ) -> List[Document]:
+        """Invokes the model to retrieve documents based on the input data. A Router Agent
+        decides whether to search for document chunks, the summaries, or both.
+
+        Parameters:
+            input_data (str): The input user query.
+            filters (dict, optional): Additional filters to apply during retrieval.
+            namespace (str, optional): The namespace from which to retrieve documents.
+                Defaults to None.
+
+        Returns:
+            List[Document]: A list of documents that match the query and filters provided.
+        """
         search_kwargs = {"k": self.k, "filter": filters}
         if namespace:
             search_kwargs["namespace"] = namespace
