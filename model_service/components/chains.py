@@ -1,5 +1,6 @@
 from langchain.schema.document import Document
 from langchain_core.runnables import (
+    Runnable,
     RunnableParallel,
     RunnableLambda,
     RunnablePassthrough
@@ -11,7 +12,7 @@ from model_service.components import (
 )
 
 
-def build_stuff_chain(llm, prompt) -> RunnableParallel:
+def build_stuff_chain(llm: Runnable, prompt, sleep_time: float = 0.1) -> RunnableParallel:
     """Build a chain that takes a `Document` and a prompt and returns a summary of the
     document as a `Document`.
     """
