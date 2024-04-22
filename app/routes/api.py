@@ -55,7 +55,7 @@ async def invoke_model(
         f"Model instance `{model_instance}` loaded for project `{project.project_id}`")
     data = model_instance.invoke(
         input_data=input_data,
-        filters={},
+        filters={"project_id": project_id},
         namespace=current_user.user_id)
     logger.debug("Model invoked successfully")
     data = clean_system_metadata(data)
