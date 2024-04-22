@@ -16,7 +16,6 @@ from app.ops.project_ops import (
 )
 
 
-
 load_dotenv(".env")
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ async def invoke_model(
     db=Depends(get_db)
 ) -> List[InvokeResultSchema]:
     """Invoke a model for a project.
-    
+
     Args:
         - project_id (str): The ID of the project.
         - input_data (str): The input data for the model.
@@ -45,7 +44,8 @@ async def invoke_model(
     # todo: better handle input data - allow for more complex data types
 
     if not check_user_project_access(project_id, current_user.user_id, db):
-        logger.debug(f"User `{current_user.user_id}` does not have access to project `{project_id}`")
+        logger.debug(
+            f"User `{current_user.user_id}` does not have access to project `{project_id}`")
         raise HTTPException(
             status_code=403, detail="User does not have access to the project")
     project = get_project(project_id, db)
@@ -55,9 +55,8 @@ async def invoke_model(
         f"Model instance `{model_instance}` loaded for project `{project.project_id}`")
     data = model_instance.invoke(
         input_data=input_data,
-        filters = {},
-        namespace = current_user.user_id,
-        user_id = current_user.user_id,)
+        filters={},
+        namespace=current_user.user_id)
     logger.debug("Model invoked successfully")
     data = clean_system_metadata(data)
     return data
