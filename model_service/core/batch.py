@@ -9,6 +9,7 @@ def batch_invoke_with_retry(
         chain: Runnable,
         input_list: list,
         max_retries: int = 5,
+        delay_increment: int = 60,
         user_tier: int = 1
 ) -> list:
     """Invoke a chain with a list of inputs in batches, with retries on rate limit errors.
@@ -17,13 +18,10 @@ def batch_invoke_with_retry(
         chain: The chain to invoke.
         input_list: The list of inputs to process.
         user_tier: The user's OpenAI API tier.
+
+    Source: https://medium.com/@hey_16878/efficient-batch-processing-with-langchain-and-openai-overcoming-ratelimiterror-daa9de4bbd8b
     """
-
     results = []
-    max_retries = 5
-    delay_increment = 60
-
-    # Optimized batch size calculation
     batch_size = min(30 if user_tier < 4 else 80, len(input_list))
     logging.debug(f"Batch Size: {batch_size}")
 
