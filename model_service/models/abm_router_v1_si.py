@@ -25,6 +25,8 @@ from model_service.components import (
     DocumentChunker,
     VectorStoreUpserter
 )
+from model_service.core.batch import batch_invoke_with_retry
+
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +144,7 @@ class ABMRouterV1SI(AbstractModel):
         upsert_documents = VectorStoreUpserter(self.vectorstore, namespace=namespace)
 
         # stuff chain: if the document is small enough, summarize it directly
-        stuff_chain = build_stuff_chain(self.index_llm, SUMMARIZE_PROMPT)
+        stuff_chain = build_stuff_chain(self.index_llm, SUMMARIZE_PROMPT, sleep_time=0.5)
 
         # map chain: split the doc into chunks, summarize each
         stuff_chain_mapping = build_stuff_chain(self.index_llm, SUMMARIZE_PROMPT_SHORT)
@@ -179,7 +181,8 @@ class ABMRouterV1SI(AbstractModel):
             chunking=chunk_chain, summarizing=summarize_chain)
 
         chain = self._configure_chain(parallel_chain, user_id=namespace)
-        return chain.batch(documents)
+        return batch_invoke_with_retry(chain, documents, user_tier=1)
+        # return chain.batch(documents)
 
     def invoke(self,
                input_data: str,

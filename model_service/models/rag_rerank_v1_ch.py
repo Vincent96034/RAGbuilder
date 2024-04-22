@@ -71,7 +71,11 @@ class RAGRerankV1CH(RAGVanillaV1):
         self.k_retrieve = k_retrieve
         self.k_rerank = k_rerank
 
-    def index(self, documents: List[Document], namespace: str = None) -> None:
+    def index(self,
+              documents: List[Document],
+              namespace: str = None,
+              metadata: dict = None,
+              ) -> None:
         """Indexes a list of documents by splitting them into chunks, cleaning, and then
         adding these chunks to the vector store.
 
@@ -87,7 +91,7 @@ class RAGRerankV1CH(RAGVanillaV1):
         Returns:
             List[str]: The list of document IDs that were indexed.
         """
-        super().index(documents, namespace=namespace)
+        super().index(documents, namespace=namespace, metadata=metadata)
 
     def invoke(self,
                input_data: str,

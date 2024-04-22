@@ -4,10 +4,12 @@ from langchain_openai import OpenAIEmbeddings
 
 from model_service.vectorstores import PineconeVectorStoreWrapper
 
+from model_service.models._abstractmodel import AbstractModel
 from model_service.models import (
-    AbstractModel,
     RAGVanillaV1,
-    RAGRerankV1CH
+    RAGRerankV1CH,
+    ABMRouterV1SI,
+    ABMReActV1SI
 )
 
 
@@ -25,6 +27,8 @@ def model_factory(modeltype_id: str, model_config: dict) -> AbstractModel:
     model_repo = {
         "RAG-vanilla-v1": RAGVanillaV1,
         "RAG-rerank-v1-ch": RAGRerankV1CH,
+        "ABM-router-v1-si": ABMRouterV1SI,
+        "ABM-react-v1-si": ABMReActV1SI
     }
 
     if modeltype_id not in model_repo:
