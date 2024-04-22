@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Document Similiarity Search",
+    "description": "API finds chunks of similar documents provided a search string.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://elated-tracee-ragbuilder.koyeb.app/v1/api/EN0MFG3VSTM8EjCxTpsd",
+      "description": "Main production server"
+    }
+  ],
+  "paths": {
+    "/invoke": {
+      "get": {
+        "operationId": "invokeModel",
+        "summary": "Invoke the Vanilla RAG model.",
+        "description": "This endpoint invokes the Vanilla RAG model to find chunks of similar documents given a search string as input_data.",
+        "parameters": [
+          {
+            "name": "input_data",
+            "in": "query",
+            "required": true,
+            "description": "Text input for the query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully invoked the model and returned results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvokeResultSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "detail": {
+                      "type": "string",
+                      "example": "Invalid API token"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "InvokeResultSchema": {
+        "type": "object",
+        "properties": {
+          "page_content": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        },
+        "description": "Schema for the result of invoking a model."
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
