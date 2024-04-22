@@ -213,7 +213,7 @@ def process_and_upload_document(
     model_instance.index(
         documents=documents,
         namespace=user_id,
-        metadata={"project_id": project.project_id, "file_id": file.file_id})
+        metadata={"project_id": project.project_id, "file_id": file.file_id, "file_title": file.file_name})
     # update ProjectModel entry: add file
     project_ref = db.collection('projects').document(project.project_id)
     project_ref.update({'files': ArrayUnion([file.file_id])})
