@@ -5,10 +5,10 @@ from firebase_admin._user_mgt import UserRecord
 from google.cloud.firestore_v1.document import DocumentReference
 
 
-
 class BaseModel:
     def to_dict(self):
         return self.__dict__
+
 
 @dataclass
 class UserModel(BaseModel):
@@ -47,7 +47,7 @@ class ProjectModel(BaseModel):
     @staticmethod
     def from_firebase(project: DocumentReference):
         doc_data = project.to_dict()
-        doc_data["project_id"] = project.id 
+        doc_data["project_id"] = project.id
         return ProjectModel(**doc_data)
 
 
@@ -81,7 +81,7 @@ class FileModel(BaseModel):
         doc_data = file.to_dict()
         doc_data["file_id"] = file.id
         return FileModel(**doc_data)
-    
+
 
 @dataclass
 class ApiKeyModel(BaseModel):
@@ -95,6 +95,22 @@ class ApiKeyModel(BaseModel):
         doc_data = api_key.to_dict()
         doc_data["api_key"] = api_key.id
         return ApiKeyModel(**doc_data)
+
+
+@dataclass
+class StatusModel(BaseModel):
+    """Status model. Represents a status in the db system."""
+    status_id: str
+    status: str
+    created_at: str
+    updated_at: str
+    status_type: Optional[str] = None
+    item_id: Optional[str] = None
+
+    def from_firebase(status: DocumentReference):
+        doc_data = status.to_dict()
+        doc_data["status_id"] = status.id
+        return StatusModel(**doc_data)
 
 
 # class DocumentModel(Base):
@@ -135,7 +151,6 @@ class ApiKeyModel(BaseModel):
 
 #     # Relationships
 #     rs_project = relationship("ProjectModel", back_populates="rs_gpt_schemas")
-
 
 
 # class ExtApiUsageModel(Base):

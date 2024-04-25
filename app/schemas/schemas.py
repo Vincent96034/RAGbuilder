@@ -100,6 +100,7 @@ class FileSchema(BaseSchema):
     created_at: str
     metadata: Optional[dict] = None
 
+
 class InvokeResultSchema(BaseSchema):
     """Schema for the result of invoking a model."""
     page_content: str
@@ -122,12 +123,23 @@ class ApiUserSchema(BaseSchema):
     created_at: str
     expires_at: str
 
+
 class ApiKeySchema(BaseSchema):
     """Schema for an API key."""
     api_key: str
     user_id: str
     created_at: str
     expires_at: str
+
+
+class CreateStatusSchema(BaseSchema):
+    status: str
+    status_type: Optional[str] = None
+    item_id: Optional[str] = None
+
+
+class UpdateStatusSchema(BaseSchema):
+    status: str
 
 
 # remember to add new schemas to __all__ in app/schemas/__init__.py
