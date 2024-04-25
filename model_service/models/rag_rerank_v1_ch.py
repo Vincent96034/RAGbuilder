@@ -4,10 +4,11 @@ from typing import List
 from langchain.schema.document import Document
 from langchain_core.vectorstores import VectorStore
 from langchain_cohere import CohereRerank
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough, RunnableLambda
 
 from model_service.models import RAGVanillaV1
 from model_service.components.reranking import Reranker
+from model_service.components.parsers import doc_output_parser
 
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,7 @@ class RAGRerankV1CH(RAGVanillaV1):
         chain = (
             RunnableParallel({"documents": retriever, "query": RunnablePassthrough()})
             | reranker
+            | RunnableLambda(lambda docs: doc_output_parser(docs))
         )
 
         chain = self._configure_chain(chain, user_id=namespace)

@@ -4,8 +4,10 @@ from typing import List
 from langchain.schema.document import Document
 from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.runnables import RunnableLambda
 
 from model_service.models._abstractmodel import AbstractModel
+from model_service.components.parsers import doc_output_parser
 from model_service.components import (
     remove_newlines,
     DocumentChunker,
@@ -126,6 +128,7 @@ class RAGVanillaV1(AbstractModel):
         retriever = self.vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs=search_kwargs)
+        chain = retriever | RunnableLambda(lambda docs: doc_output_parser(docs))
 
-        chain = self._configure_chain(retriever, user_id=namespace)
+        chain = self._configure_chain(chain, user_id=namespace)
         return chain.invoke(input_data)

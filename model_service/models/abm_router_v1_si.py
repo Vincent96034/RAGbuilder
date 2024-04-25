@@ -26,6 +26,7 @@ from model_service.components import (
     VectorStoreUpserter
 )
 from model_service.core.batch import batch_invoke_with_retry
+from model_service.components.parsers import doc_output_parser
 
 
 logger = logging.getLogger(__name__)
@@ -242,6 +243,7 @@ class ABMRouterV1SI(AbstractModel):
         chain = (
             {"retriever": router_agent, "query": lambda x: x["query"]}
             | RunnableLambda(_route)
+            | RunnableLambda(lambda docs: doc_output_parser(docs))
         )
         chain = self._configure_chain(chain, user_id=namespace)
         return chain.invoke({"query": input_data})
