@@ -31,7 +31,7 @@ async def invoke_model(
     input_data: str,
     current_user: Annotated[ApiUserSchema, Depends(get_api_user)],
     db=Depends(get_db)
-) -> List[InvokeResultSchema]:
+) -> List[InvokeResultSchema] | str:
     """Invoke a model for a project.
 
     Args:
@@ -41,6 +41,7 @@ async def invoke_model(
     Returns:
         List[InvokeResultSchema]: The result of the model invocation.
     """
+    # todo: fix typing
     # todo: better handle input data - allow for more complex data types
 
     if not check_user_project_access(project_id, current_user.user_id, db):
