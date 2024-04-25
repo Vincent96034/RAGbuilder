@@ -10,6 +10,7 @@ from model_service.components import (
     DocumentChunker,
     BatchChainRunner
 )
+from model_service.components.parsers import llm_to_doc_parser
 
 
 def build_stuff_chain(llm: Runnable, prompt, sleep_time: float = 0.1) -> RunnableParallel:
@@ -21,7 +22,7 @@ def build_stuff_chain(llm: Runnable, prompt, sleep_time: float = 0.1) -> Runnabl
             summary=prompt | llm,
             document=RunnablePassthrough(),
         )
-        | RunnableLambda(lambda out: _llm_to_doc_parser(out))
+        | RunnableLambda(lambda out: llm_to_doc_parser(out))
     ).with_config({"run_name": "Stuff Chain"})
     return stuff_chain
 
@@ -54,14 +55,5 @@ def _merge_summaries(docs):
     print("_merge_summaries", docs)
     page_content = " ".join([doc.page_content for doc in docs])
     doc = Document(page_content=page_content, metadata=docs[0].metadata.copy())
-    doc.metadata["is_summary"] = True
-    return doc
-
-
-def _llm_to_doc_parser(out):
-    """Parse the output of a language model into a `Document`."""
-    doc = Document(
-        page_content=out["summary"].content,
-        metadata=out["document"].metadata.copy())
     doc.metadata["is_summary"] = True
     return doc

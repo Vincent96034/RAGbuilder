@@ -8,7 +8,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable  # RunnableParallel
 
-from langchain.agents import AgentExecutor, create_react_agent
+from langchain.agents import AgentExecutor, create_react_agent  # , load_tools
 from langchain.schema.document import Document
 from langchain.tools.render import render_text_description_and_args
 from langchain.tools.retriever import create_retriever_tool
@@ -121,7 +121,7 @@ class ABMReActV1SI(ABMRouterV1SI):
         #     name="Hybrid Retriever",
         #     description=HYBRID_RETR_DESCR,
         # )
-
+        # google_search = load_tools("google_search")[0]
         tools = [chunk_retriever_tool, summary_retriever_tool]
         agent = create_react_agent(
             llm=self.invoke_llm,

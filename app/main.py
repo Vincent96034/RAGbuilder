@@ -18,8 +18,10 @@ from app.routes import (
 
 
 load_dotenv(".env")
+log_level = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.config.fileConfig("app/config/logging.conf", disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
+logger.setLevel(log_level)
 
 
 if not firebase_admin._apps:
@@ -63,4 +65,4 @@ app.add_middleware(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level=log_level.lower())
