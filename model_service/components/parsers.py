@@ -20,5 +20,5 @@ def doc_output_parser(docs: Document | List[Document]) -> str:
     for doc in docs:
         # todo: dont hardcode this
         src = doc.metadata.get("file_title", "N/A")
-        ret_str += f"{doc.page_content}\n\nSource: {src}\n---"
+        ret_str += f"{doc.page_content}\nSOURCE: {src}\n---\n\n"
     return ret_str
