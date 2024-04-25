@@ -260,7 +260,9 @@ def check_file_metadatas(metadatas) -> dict:
     return metadatas
 
 
-def clean_system_metadata(data: List[Document]):
+def clean_system_metadata(data):
+    if not isinstance(data, Document):
+        return data
     for doc in data:
         for key in SYSTEM_METADATA_KEYS:
             if key in doc.metadata.keys():
