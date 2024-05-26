@@ -19,17 +19,15 @@ class AbstractModel(ABC):
         ...
 ```
 # List of Models
-## Default RAG Model: `default-rag` 
+## Default RAG Model: `RAGVanillaV1` 
 The simples of all models, implementing simple Retrieval Augmented Generation (RAG) functionality.
-
-![default-rag]("xxx")
 
 **Usage:**
 ```python
 from langchain_openai import OpenAIEmbeddings
 from langchain.schema.document import Document
 from langchain_pinecone import PineconeVectorStore 
-from model_service.models import DefaultRAG
+from model_service.models import RAGVanillaV1
 
 # create sample documents
 docs = [
@@ -43,7 +41,7 @@ docs = [
 
 # initialize vectorstore and model
 vectorstore = PineconeVectorStore(index_name="ragbuilder", embedding=OpenAIEmbeddings())
-model = DefaultRAG(vectorstore)
+model = RAGVanillaV1(vectorstore)
 
 # index documents: this uploads the documents under the namespace 'vincent-test' to pinecone
 model.index(docs, namespace="vincent-test")
