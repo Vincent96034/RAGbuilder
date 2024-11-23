@@ -66,8 +66,8 @@ protobuf==4.25.3
 pyasn1==0.5.1
 pyasn1-modules==0.3.0
 pycparser==2.21
-pydantic==2.6.4
-pydantic_core==2.16.3
+pydantic==2.10.1
+pydantic_core==2.27.1
 PyJWT==2.8.0
 pyparsing==3.1.2
 pypdf==4.1.0
@@ -86,9 +86,9 @@ starlette==0.36.3
 tenacity==8.2.3
 tiktoken==0.6.0
 tqdm==4.66.2
-types-requests==2.31.0.20240406
-typing-inspect==0.9.0
-typing_extensions==4.10.0
+types-requests
+typing-inspect
+typing_extensions
 uritemplate==4.1.1
 urllib3==2.2.1
 uvicorn==0.28.0
