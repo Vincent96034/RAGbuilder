@@ -44,14 +44,13 @@ def get_projects_for_user(user_id: str, db: firestore.client) -> list[ProjectMod
     projects = (
         db.collection("projects")
         .where(filter=FieldFilter("user_id", "==", user_id))
-        .stream())
+        .stream()
+    )
     return [ProjectModel.from_firebase(project) for project in projects]
 
 
 def create_project(
-    project: CreateProjectSchema,
-    user_id: str,
-    db: firestore.client
+    project: CreateProjectSchema, user_id: str, db: firestore.client
 ) -> ProjectModel:
     """Create a new project in the database.
 
@@ -77,17 +76,16 @@ def create_project(
         raise Exception("Failed to create the project correctly.")
 
 
-def delete_project(
-        project_id: str, user_id: str, db: firestore.client) -> dict:
+def delete_project(project_id: str, user_id: str, db: firestore.client) -> dict:
     db.collection("projects").document(project_id).delete()
     return {"message": "Project deleted successfully"}
 
 
 def check_user_project_access(
-        project_id: str,
-        user_id: str,
-        db: firestore.client,
-        detail_message: str = "User does not have access to the project."
+    project_id: str,
+    user_id: str,
+    db: firestore.client,
+    detail_message: str = "User does not have access to the project.",
 ) -> ProjectModel:
     """Check if the user has access to the project. Returns the project if the user has
     access, otherwise raises an HTTPException.
@@ -99,8 +97,7 @@ def check_user_project_access(
     project = ProjectModel.from_firebase(doc)
     check = project.user_id == user_id
     if not check:
-        raise HTTPException(
-            status_code=403, detail=detail_message)
+        raise HTTPException(status_code=403, detail=detail_message)
     return project
 
 
@@ -118,9 +115,7 @@ def get_model_type(model_type_id: str, db: firestore.client) -> ModelTypeModel:
 
 
 def create_file(
-    file: CreateFileSchema,
-    project_id: str,
-    db: firestore.client
+    file: CreateFileSchema, project_id: str, db: firestore.client
 ) -> FileModel:
     """Create a new file in the database.
 
@@ -179,9 +174,12 @@ def get_multiple_files(file_ids: List[str], db: firestore.client) -> List[FileMo
     batch_size = 10  # Firestore has a limit of 10 in 'in' operator
 
     for i in range(0, len(file_ids), batch_size):
-        batch_ids = file_ids[i:i+batch_size]
-        docs = db.collection("files").where(
-            FieldPath.document_id(), "in", batch_ids).stream()
+        batch_ids = file_ids[i : i + batch_size]
+        docs = (
+            db.collection("files")
+            .where(FieldPath.document_id(), "in", batch_ids)
+            .stream()
+        )
 
         found_ids = set()
         for doc in docs:
@@ -189,55 +187,66 @@ def get_multiple_files(file_ids: List[str], db: firestore.client) -> List[FileMo
             found_ids.add(doc.id)
 
         # Check for missing documents in this batch
-        missing_ids.extend([file_id for file_id in batch_ids if file_id not in found_ids])
+        missing_ids.extend(
+            [file_id for file_id in batch_ids if file_id not in found_ids]
+        )
 
     if missing_ids:
         raise HTTPException(
-            status_code=404, detail=f"{len(missing_ids)} Files not found: {', '.join(missing_ids)}")
+            status_code=404,
+            detail=f"{len(missing_ids)} Files not found: {', '.join(missing_ids)}",
+        )
     return files
 
 
 def process_and_upload_document(
-        user_id: str,
-        file: FileModel,
-        documents: List[Document],
-        project: ProjectModel,
-        model: ModelTypeModel,
-        db: firestore.client
+    user_id: str,
+    file: FileModel,
+    documents: List[Document],
+    project: ProjectModel,
+    model: ModelTypeModel,
+    db: firestore.client,
 ) -> None:
     logger.debug(f"Background task: Processing and uploading file `{file.file_id}` ...")
     # create model instance and index documents
     model_instance = model_factory(model.modeltype_id, model.config)
     logger.debug(
-        f"Model instance `{model_instance}` created for project `{project.project_id}`")
+        f"Model instance `{model_instance}` created for project `{project.project_id}`"
+    )
     model_instance.index(
         documents=documents,
         namespace=user_id,
-        metadata={"project_id": project.project_id, "file_id": file.file_id, "file_title": file.file_name})
+        metadata={
+            "project_id": project.project_id,
+            "file_id": file.file_id,
+            "file_title": file.file_name,
+        },
+    )
     # update ProjectModel entry: add file
-    project_ref = db.collection('projects').document(project.project_id)
-    project_ref.update({'files': ArrayUnion([file.file_id])})
+    project_ref = db.collection("projects").document(project.project_id)
+    project_ref.update({"files": ArrayUnion([file.file_id])})
     logger.debug(f"File `{file.file_id}` processed and uploaded successfully.")
 
 
 def deindex_and_delete_files(
-        user_id: str,
-        file_id: FileModel,
-        project: ProjectModel,
-        model: ModelTypeModel,
-        db: firestore.client
+    user_id: str,
+    file_id: FileModel,
+    project: ProjectModel,
+    model: ModelTypeModel,
+    db: firestore.client,
 ) -> None:
     logger.debug(f"Background task: Deindexing and deleting file `{file_id}` ...")
     # create model instance and deindex documents
     model_instance = model_factory(model.modeltype_id, model.config)
     logger.debug(
-        f"Model instance `{model_instance}` created for project `{project.project_id}`")
+        f"Model instance `{model_instance}` created for project `{project.project_id}`"
+    )
     model_instance.deindex(filter={"file_id": file_id}, namespace=user_id)
     # update ProjectModel entry: remove file
-    project_ref = db.collection('projects').document(project.project_id)
-    project_ref.update({'files': firestore.ArrayRemove([file_id])})
+    project_ref = db.collection("projects").document(project.project_id)
+    project_ref.update({"files": firestore.ArrayRemove([file_id])})
     # delete file
-    db.collection('files').document(file_id).delete()
+    db.collection("files").document(file_id).delete()
     logger.debug(f"File `{file_id}` deindexed and deleted successfully.")
 
 
@@ -248,13 +257,15 @@ def check_file_metadatas(metadatas) -> dict:
         for file_id in metadatas.keys():
             if not isinstance(metadatas[file_id], dict):
                 raise HTTPException(
-                    status_code=400, detail="Metadata must be a dictionary")
+                    status_code=400, detail="Metadata must be a dictionary"
+                )
             for key in metadatas[file_id].keys():
                 if key in SYSTEM_METADATA_KEYS:
                     # remove keys that are not allowed
                     del metadatas[file_id][key]
                     logger.warning(
-                        f"Metadata key `{key}` is not allowed and has been removed.")
+                        f"Metadata key `{key}` is not allowed and has been removed."
+                    )
     else:
         metadatas = {}
     return metadatas
