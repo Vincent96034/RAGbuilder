@@ -14,7 +14,7 @@ from app.schemas import (
     ProjectSchema,
     CreateFileSchema,
     FileSchema,
-    DeleteFileSchema
+    DeleteFileSchema,
 )
 from app.ops.project_ops import (
     update_project,
@@ -28,7 +28,7 @@ from app.ops.project_ops import (
     get_multiple_files,
     get_file,
     deindex_and_delete_files,
-    check_file_metadatas
+    check_file_metadatas,
 )
 
 
@@ -38,17 +38,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/v1/projects",
     tags=["project"],
-    responses={404: {"description": "Not found"}})
+    responses={404: {"description": "Not found"}},
+)
 
 
 @router.get("/{project_id}", response_model=ProjectSchema)
 async def read_project_from_user(
     project_id: str,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> ProjectSchema:
     """Get a single project by its ID.
-    
+
     Args:
         project_id (str): The ID of the project to get.
 
@@ -64,10 +65,10 @@ async def read_project_from_user(
 async def update_project_from_user(
     project: UpdateProjectSchema,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> ProjectSchema:
     """Update a single project by its ID.
-    
+
     Args:
         project (UpdateProjectSchema): The updated project.
 
@@ -81,10 +82,10 @@ async def update_project_from_user(
 @router.get("/", response_model=List[ProjectSchema])
 async def read_projects_for_user(
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> List[ProjectSchema]:
     """Get all projects for the current user.
-    
+
     Args:
         None
 
@@ -99,10 +100,10 @@ async def read_projects_for_user(
 async def create_project_for_user(
     project: CreateProjectSchema,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> ProjectSchema:
     """Create a new project.
-    
+
     Args:
         project (CreateProjectSchema): The project to create.
 
@@ -117,10 +118,10 @@ async def create_project_for_user(
 async def delete_project_for_user(
     project_id: str,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> dict:
     """Delete a project by its ID.
-    
+
     Args:
         project_id (str): The ID of the project to delete.
 
@@ -138,10 +139,10 @@ async def create_upload_files(
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
     files: List[UploadFile] = File(...),
     metadatas: Optional[str] = Form(...),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> dict:
     """Upload multiple files to a project. The files are processed in the background.
-    
+
     Args:
         - project_id (str): The ID of the project to upload files to.
         - files (List[UploadFile]): The files to upload.
@@ -152,7 +153,7 @@ async def create_upload_files(
     Returns:
         dict: A message indicating the number of files uploaded and that they are now
             processing.
-    
+
     ## Example metadata format:
         {
             "file1.txt": {"key1": "value1"},
@@ -170,7 +171,8 @@ async def create_upload_files(
             project_id=project_id,
             file_name=file.filename,
             file_type=handler.extension,
-            metadata=metadata)
+            metadata=metadata,
+        )
         file_model = create_file(file_ref, project_id, db)
         documents = await handler.read()
         background_task_kwargs = {
@@ -179,20 +181,23 @@ async def create_upload_files(
             "documents": documents,
             "project": project,
             "model": model,
-            "db": db}
+            "db": db,
+        }
         background_tasks.add_task(process_and_upload_document, **background_task_kwargs)
 
-    return {"message": f"{len(files)} files uploaded successfully: {files}. Now Processing..."}
+    return {
+        "message": f"{len(files)} files uploaded successfully: {files}. Now Processing..."
+    }
 
 
 @router.get("/{project_id}/files", response_model=list)
 async def get_files_for_project(
     project_id: str,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> List[FileSchema]:
     """Get all files for a project.
-    
+
     Args:
         project_id (str): The ID of the project to get files for.
 
@@ -211,11 +216,11 @@ async def get_file_for_project(
     project_id: str,
     file_id: str,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> List:
     """Get a file from a project.
-    
-    Args: 
+
+    Args:
         - project_id (str): The ID of the project.
         - file_id (str): The ID of the file.
 
@@ -235,11 +240,11 @@ async def delete_files_from_project(
     files: List[DeleteFileSchema],
     background_tasks: BackgroundTasks,
     current_user: Annotated[CurrentUserSchema, Depends(get_current_user)],
-    db=Depends(get_db)
+    db=Depends(get_db),
 ) -> dict:
     """Delete a file from a project. The file is deindexed according to the selected model
     and deleted in the background.
-    
+
     Args:
         - project_id (str): The ID of the project.
         - files (List[DeleteFileSchema]): The files to delete.
@@ -252,15 +257,18 @@ async def delete_files_from_project(
 
     for file in files:
         if file.file_id not in project.files:
-            raise HTTPException(status_code=404, detail=f"File {file.file_id} not found in project")
-        
+            raise HTTPException(
+                status_code=404, detail=f"File {file.file_id} not found in project"
+            )
+
     for file in files:
         background_task_kwargs = {
             "file_id": file.file_id,
             "user_id": current_user.user_id,
             "project": project,
             "model": model,
-            "db": db,}
+            "db": db,
+        }
         background_tasks.add_task(deindex_and_delete_files, **background_task_kwargs)
 
     return {"message": "File deleted successfully."}

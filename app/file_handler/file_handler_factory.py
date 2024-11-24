@@ -6,16 +6,15 @@ class FileHandler:
     """Factory class to get the appropriate handler for a file."""
 
     def __init__(self):
-        self.handlers = {
-            "pdf": PDFHandler,
-            "txt": TXTHandler
-        }
+        self.handlers = {"pdf": PDFHandler, "txt": TXTHandler}
 
     def get_handler(self, file: UploadFile):
         extension = file.filename.split(".")[-1]
-        handler = self.handlers.get(extension, None)
+        handler = self.handlers.get(str(extension).lower(), None)
         if not handler:
             raise HTTPException(
-                status_code=400, detail=f"Unsupported file type: must be PDF or TXT, got {extension}")
+                status_code=400,
+                detail=f"Unsupported file type: must be PDF or TXT, got {extension}",
+            )
 
         return handler(file=file, extension=extension)
